@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
-import br.ufmg.dcc.labsoft.jextract.metrics.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 
 public class JavaProjectAnalyser {

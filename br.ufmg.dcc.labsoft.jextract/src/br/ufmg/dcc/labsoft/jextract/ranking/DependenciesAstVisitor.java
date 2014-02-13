@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.metrics;
+package br.ufmg.dcc.labsoft.jextract.ranking;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
