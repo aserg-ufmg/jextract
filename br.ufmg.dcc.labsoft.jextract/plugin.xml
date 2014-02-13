@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="br.ufmg.dcc.labsoft.jextract.contribution1"
+            objectClass="org.eclipse.core.resources.IProject">
+         <menu
+               id="br.ufmg.dcc.labsoft.jextract.projectMenu"
+               label="JExtract"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.importEmr"
+               label="Import extract method opportunities"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.showGoldset"
+               label="Show Oracle recomendations"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.findEmr"
+               label="Find extract method opportunities"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.inlineMethods"
+               label="Introduce inline methods"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.extractGoldSet"
+               label="Extract gold set"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <extension point="org.eclipse.ui.popupMenus"> 
+	<objectContribution 
+	      id="br.ufmg.dcc.labsoft.jextract.methodContribution"
+	   objectClass="org.eclipse.jdt.core.IMethod">
+	     <menu
+               id="br.ufmg.dcc.labsoft.jextract.methodMenu"
+               label="JExtract"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+	   
+	      <action
+	         class="br.ufmg.dcc.labsoft.jextract.ui.MethodMenuAction"
+	         id="br.ufmg.dcc.labsoft.jextract.methodmenu.findEmr" 
+	         label="Find extract method opportunities"
+	         menubarPath="br.ufmg.dcc.labsoft.jextract.methodMenu/group1"> 
+	      </action> 
+	   </objectContribution> 
+	</extension>
+   
+   
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="br.ufmg.dcc.labsoft.jextract"
+            name="JExtract">
+      </category>
+      <view
+            category="br.ufmg.dcc.labsoft.jextract"
+            class="br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView"
+            icon="icons/sample.gif"
+            id="br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView"
+            name="Extract Method Recomendations">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               id="br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView"
+               ratio="0.5"
+               relationship="right"
+               relative="org.eclipse.ui.views.ProblemView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         id="br.ufmg.dcc.labsoft.jextract.extractionslice"
+         name="Extraction slice"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.textmarker">
+      </super>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+	     markerType="br.ufmg.dcc.labsoft.jextract.extractionslice"
+	     name="br.ufmg.dcc.labsoft.jextract.extractionslice">
+	  </type>
+	</extension>
+<extension
+      point="org.eclipse.ui.editors.markerAnnotationSpecification">
+   <specification
+         annotationType="br.ufmg.dcc.labsoft.jextract.extractionslice"
+         colorPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslice.color"
+         colorPreferenceValue="192,255,192"
+         contributesToHeader="false"
+         highlightPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslice.highlight"
+         highlightPreferenceValue="true"
+         includeOnPreferencePage="true"
+         label="Extraction slice"
+         overviewRulerPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslice.overview"
+         overviewRulerPreferenceValue="true"
+         presentationLayer="0"
+         textPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslice.text"
+         textPreferenceValue="true"
+         textStylePreferenceValue="BOX"
+         verticalRulerPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslice.ruler"
+         verticalRulerPreferenceValue="true">
+   </specification>
+</extension>
+
+   <extension
+         id="br.ufmg.dcc.labsoft.jextract.extractionslicedup"
+         name="Extraction slice duplicated"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.textmarker">
+      </super>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+	     markerType="br.ufmg.dcc.labsoft.jextract.extractionslicedup"
+	     name="br.ufmg.dcc.labsoft.jextract.extractionslicedup">
+	  </type>
+	</extension>
+<extension
+      point="org.eclipse.ui.editors.markerAnnotationSpecification">
+   <specification
+         annotationType="br.ufmg.dcc.labsoft.jextract.extractionslicedup"
+         colorPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslicedup.color"
+         colorPreferenceValue="255,235,191"
+         contributesToHeader="false"
+         highlightPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslicedup.highlight"
+         highlightPreferenceValue="true"
+         includeOnPreferencePage="true"
+         label="Extraction slice duplicated"
+         overviewRulerPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslicedup.overview"
+         overviewRulerPreferenceValue="true"
+         presentationLayer="0"
+         textPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslicedup.text"
+         textPreferenceValue="true"
+         textStylePreferenceValue="BOX"
+         verticalRulerPreferenceKey="br.ufmg.dcc.labsoft.jextract.extractionslicedup.ruler"
+         verticalRulerPreferenceValue="true">
+   </specification>
+</extension>
+
+</plugin>
