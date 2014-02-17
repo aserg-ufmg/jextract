@@ -63,7 +63,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage
-		        .showView("br.ufmg.dcc.labsoft.jextract.views.ExtractMethodRecomendationsView");
+		        .showView("br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView");
 		view.setRecomendations(recomendations, project);
 
 		if (recomendations.isEmpty()) {

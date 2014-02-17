@@ -48,7 +48,7 @@ import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 
 public class ExtractMethodRecomendationsView extends ViewPart {
 
-	public static final String ID = "br.ufmg.dcc.labsoft.jextract.views.ExtractMethodRecomendationsView";
+	public static final String ID = "br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView";
 
 	private TableViewer viewer;
 	private Action action1;
