@@ -2,10 +2,6 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 import java.util.List;
 
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
-import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -21,6 +17,10 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
+import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class EmrGenerator {
 
@@ -70,6 +70,46 @@ public class EmrGenerator {
 		});
 	}
 
+	protected void forEachSlice(EmrMethodModel model, int minSize) {
+		int methodSize = model.getTotalSize();
+		for (EmrBlock block: model.getBlocks()) {
+			List<EmrStatement> children = block.getChildren();
+			for (int last = children.size() - 1; last >= 0; last--) {
+				int sliceSize = 0;
+				for (int first = last; first >= 0; first--) {
+					sliceSize += children.get(first).getSize();
+					if (sliceSize >= minSize) {
+						int remaining = methodSize - sliceSize;
+						if (remaining >= minSize) {
+							this.handleSequentialSlice(model, children.get(first), children.get(last), sliceSize);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	private void handleSequentialSlice(EmrMethodModel model, EmrStatement first, EmrStatement last, int totalSize) {
+		int start = first.getStartChar();
+		EmrStatement lastStatement = last;
+		int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
+
+		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
+				model.getDeclaringType(), model.getMethodSignature(), ExtractionSlice.fromString(String.format("e%d:%d;", start,
+		                length)));
+
+		recomendation.setDuplicatedSize(0);
+		recomendation.setExtractedSize(totalSize);
+		recomendation.setSourceFile(model.getCompilationUnit());
+		recomendation.setOriginalSize(model.getTotalSize());
+
+		recomendation.setOk(Utils.canExtract(model.getCompilationUnit(), start, length));
+
+		if (recomendation.isOk()) {
+			recomendations.add(recomendation);
+		}
+	}
+	
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
@@ -78,31 +118,8 @@ public class EmrGenerator {
 		String key = declaringType + "\t" + methodSignature;
 		System.out.println("Analysing recomendations for " + key);
 
-		final EmrMethod emrMethod = EmrMethod.create(methodDeclaration);
-		emrMethod.forEachSlice(new EmrSliceHandler() {
-			@Override
-			public void handleSlice(EmrSlice slice) {
-				int start = slice.getFirstStatement().getStartChar();
-				EmrStatement lastStatement = slice.getLastStatement();
-				int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
-
-				ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
-				        declaringType, methodSignature, ExtractionSlice.fromString(String.format("e%d:%d;", start,
-				                length)));
-
-				recomendation.setDuplicatedSize(0);
-				recomendation.setExtractedSize(slice.getTotalSize());
-				recomendation.setSourceFile(src);
-				recomendation.setOriginalSize(emrMethod.getTotalSize());
-
-				recomendation.setOk(Utils.canExtract(src, start, length));
-
-				if (recomendation.isOk()) {
-					recomendations.add(recomendation);
-				}
-			}
-		}, minSize);
-
+		final EmrMethodModel emrMethod = EmrMethodModel.create(src, methodDeclaration);
+		this.forEachSlice(emrMethod, minSize);
 	}
 
 }

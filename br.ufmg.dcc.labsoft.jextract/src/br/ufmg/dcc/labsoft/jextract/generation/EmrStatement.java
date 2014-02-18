@@ -6,6 +6,7 @@ import org.eclipse.jdt.core.dom.Statement;
 
 public class EmrStatement {
 
+	private int index = 0;
 	private int selfSize = 0;
 	private int childrenSize = 0;
 	private int startChar = 0;
@@ -19,12 +20,14 @@ public class EmrStatement {
 	};
 
 	private EmrStatement() {
+		this.index = -1;
 		this.selfSize = 0;
 		this.childrenSize = 0;
 		this.parent = this;
 	}
 
-	EmrStatement(Statement astNode, EmrStatement parent, boolean block) {
+	EmrStatement(int index, Statement astNode, EmrStatement parent, boolean block) {
+		this.index = index;
 		this.selfSize = astNode instanceof Block ? 0 : 1;
 		this.childrenSize = 0;
 		this.parent = parent != null ? parent : NIL;
@@ -37,6 +40,10 @@ public class EmrStatement {
 	void registerAsChild(EmrStatement child) {
 		this.childrenSize += child.getSize();
 		this.parent.registerAsChild(child);
+	}
+
+	public int getIndex() {
+		return index;
 	}
 
 	public int getSize() {

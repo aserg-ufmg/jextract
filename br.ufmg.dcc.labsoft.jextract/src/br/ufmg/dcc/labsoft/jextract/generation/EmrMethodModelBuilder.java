@@ -1,24 +1,31 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
-
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 
-public class EmrAstVisitor extends ASTVisitor {
+import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
-	private final LinkedHashMap<Object, EmrStatement> statementsMap;
-	private final List<EmrBlock> blocks;
+public class EmrMethodModelBuilder extends ASTVisitor {
 
-	public EmrAstVisitor(List<EmrBlock> blocks) {
+	private LinkedHashMap<Object, EmrStatement> statementsMap;
+	private List<EmrBlock> blocks;
+
+	public EmrMethodModel getModel(ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		this.statementsMap = new LinkedHashMap<Object, EmrStatement>();
-		this.blocks = blocks;
+		this.blocks = new ArrayList<EmrBlock>();
+		methodDeclaration.accept(this);
+		EmrStatement[] sa = this.statementsMap.values().toArray(new EmrStatement[this.statementsMap.size()]);
+		EmrBlock[] ba = this.blocks.toArray(new EmrBlock[this.blocks.size()]);
+		return new EmrMethodModel(src, methodDeclaration, sa, ba);
 	}
 
 	@Override
@@ -28,7 +35,7 @@ public class EmrAstVisitor extends ASTVisitor {
 			// O pai direto de um statement pode não ser um statement quando existe inner class na jogada.
 			EmrStatement parent = this.statementsMap.get(Utils.findEnclosingStatement(node1.getParent()));
 			boolean blockLike = node1 instanceof Block || node1 instanceof SwitchStatement;
-			EmrStatement emrStatement = new EmrStatement(node1, parent, blockLike);
+			EmrStatement emrStatement = new EmrStatement(this.statementsMap.size(), node1, parent, blockLike);
 			this.statementsMap.put(node1, emrStatement);
 		}
 	}
@@ -64,4 +71,5 @@ public class EmrAstVisitor extends ASTVisitor {
 		emrBlock.appendStatement(thisStatement);
 		this.blocks.add(emrBlock);
 	}
+
 }
