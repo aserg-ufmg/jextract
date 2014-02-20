@@ -22,12 +22,12 @@ import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
-public class EmrGenerator {
+public class SimpleEmrGenerator {
 
 	private final List<ExtractMethodRecomendation> recomendations;
 	private final int minSize;
 
-	public EmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
+	public SimpleEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
 		super();
 		this.recomendations = recomendations;
 		this.minSize = minSize;
@@ -81,7 +81,12 @@ public class EmrGenerator {
 					if (sliceSize >= minSize) {
 						int remaining = methodSize - sliceSize;
 						if (remaining >= minSize) {
-							this.handleSequentialSlice(model, children.get(first), children.get(last), sliceSize);
+							int start = block.get(first).getStartChar();
+							EmrStatement lastStatement = block.get(last);
+							int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
+							if (Utils.canExtract(model.getCompilationUnit(), start, length)) {
+								this.handleSequentialSlice(model, block, first, last, sliceSize);
+							}
 						}
 					}
 				}
@@ -89,9 +94,9 @@ public class EmrGenerator {
 		}
 	}
 	
-	private void handleSequentialSlice(EmrMethodModel model, EmrStatement first, EmrStatement last, int totalSize) {
-		int start = first.getStartChar();
-		EmrStatement lastStatement = last;
+	private void handleSequentialSlice(EmrMethodModel model, EmrBlock block, int first, int last, int totalSize) {
+		int start = block.get(first).getStartChar();
+		EmrStatement lastStatement = block.get(last);
 		int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
 
 		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
@@ -103,12 +108,14 @@ public class EmrGenerator {
 		recomendation.setSourceFile(model.getCompilationUnit());
 		recomendation.setOriginalSize(model.getTotalSize());
 
-		recomendation.setOk(Utils.canExtract(model.getCompilationUnit(), start, length));
+		recomendation.setOk(true);
 
-		if (recomendation.isOk()) {
-			recomendations.add(recomendation);
-		}
+		this.addRecomendation(recomendation);
 	}
+
+	protected void addRecomendation(ExtractMethodRecomendation recomendation) {
+	    recomendations.add(recomendation);
+    }
 	
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
@@ -122,4 +129,5 @@ public class EmrGenerator {
 		this.forEachSlice(emrMethod, minSize);
 	}
 
+	
 }

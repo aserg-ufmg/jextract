@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
@@ -59,7 +59,7 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 			// int k = dialog.getFirstK();
 
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			EmrGenerator analyser = new EmrGenerator(recomendations, minSize);
+			SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
 			analyser.generateRecomendations(method);
 
 			// List<ExtractMethodRecomendation> filtered =

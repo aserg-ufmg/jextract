@@ -7,6 +7,7 @@ import org.eclipse.jdt.core.dom.Statement;
 public class EmrStatement {
 
 	private int index = 0;
+	private int indexInBlock = 0;
 	private int selfSize = 0;
 	private int childrenSize = 0;
 	private int startChar = 0;
@@ -42,8 +43,16 @@ public class EmrStatement {
 		this.parent.registerAsChild(child);
 	}
 
+	public int getIndexInBlock() {
+		return this.indexInBlock;
+	}
+
+	void setIndexInBlock(int indexInBlock) {
+		this.indexInBlock = indexInBlock;
+	}
+
 	public int getIndex() {
-		return index;
+		return this.index;
 	}
 
 	public int getSize() {
@@ -59,7 +68,7 @@ public class EmrStatement {
 	}
 
 	public boolean isBlock() {
-		return block;
+		return this.block;
 	}
 
 }
