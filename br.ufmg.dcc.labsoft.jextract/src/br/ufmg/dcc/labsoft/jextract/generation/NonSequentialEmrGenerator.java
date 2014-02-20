@@ -3,6 +3,8 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 import java.util.BitSet;
 import java.util.List;
 
+import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
@@ -12,28 +14,15 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 	}
 
 	@Override
-	protected void forEachSlice(EmrMethodModel model, int minSize) {
+	protected void forEachSlice(MethodModel model, int minSize) {
 		//int methodSize = model.getTotalSize();
-		for (EmrBlock block: model.getBlocks()) {
+		for (BlockModel block: model.getBlocks()) {
 			StatementSelection selected = new StatementSelection(block);
 			this.select(block, selected, 0);
-			
-//			for (int last = children.size() - 1; last >= 0; last--) {
-//				int sliceSize = 0;
-//				for (int first = last; first >= 0; first--) {
-//					sliceSize += children.get(first).getSize();
-//					if (sliceSize >= minSize) {
-//						int remaining = methodSize - sliceSize;
-//						if (remaining >= minSize) {
-//							this.handleSequentialSlice(model, block, first, last, sliceSize);
-//						}
-//					}
-//				}
-//			}
 		}
 	}
 
-	private void select(EmrBlock block, StatementSelection selected, int i) {
+	private void select(BlockModel block, StatementSelection selected, int i) {
 	    if (i >= block.getChildren().size()) {
 	    	this.handleSlice(block, selected);
 	    } else {
@@ -48,19 +37,19 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 	    }
     }
 
-	private boolean canSelect(EmrBlock block, StatementSelection selected, int i, boolean b) {
+	private boolean canSelect(BlockModel block, StatementSelection selected, int i, boolean b) {
 	    // TODO Auto-generated method stub
 	    return false;
     }
 
-	private void handleSlice(EmrBlock block, StatementSelection selected) {
+	private void handleSlice(BlockModel block, StatementSelection selected) {
 	    // TODO Auto-generated method stub
     }
-	
+
 	private static class StatementSelection {
 		BitSet selected;
-		EmrBlock block;
-		StatementSelection(EmrBlock block) {
+		BlockModel block;
+		StatementSelection(BlockModel block) {
 			this.block = block;
 			this.selected = new BitSet(block.getChildren().size());
 		}

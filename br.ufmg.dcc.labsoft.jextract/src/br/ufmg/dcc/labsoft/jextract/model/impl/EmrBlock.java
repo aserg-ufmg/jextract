@@ -1,9 +1,11 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextract.model.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmrBlock {
+import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+
+class EmrBlock implements BlockModel {
 
 	private EmrStatement blockStatement;
 	private List<EmrStatement> children;
@@ -13,7 +15,7 @@ public class EmrBlock {
 		this.children = new ArrayList<EmrStatement>();
 	}
 
-	List<EmrStatement> getChildren() {
+	public List<EmrStatement> getChildren() {
 		return this.children;
 	}
 

@@ -1,19 +1,20 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextract.model.impl;
 
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Statement;
 
+import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 
-public class EmrStatement {
+
+class EmrStatement implements StatementModel {
 
 	private int index = 0;
 	private int indexInBlock = 0;
 	private int selfSize = 0;
 	private int childrenSize = 0;
-	private int startChar = 0;
-	private int charLength = 0;
 	private boolean block = false;
 	EmrStatement parent;
+	Statement astNode = null;
 
 	private static final EmrStatement NIL = new EmrStatement(){
 		@Override
@@ -32,10 +33,9 @@ public class EmrStatement {
 		this.selfSize = astNode instanceof Block ? 0 : 1;
 		this.childrenSize = 0;
 		this.parent = parent != null ? parent : NIL;
-		this.startChar = astNode.getStartPosition();
-		this.charLength = astNode.getLength();
 		this.parent.registerAsChild(this);
 		this.block = block;
+		this.astNode = astNode;
 	}
 
 	void registerAsChild(EmrStatement child) {
@@ -59,16 +59,12 @@ public class EmrStatement {
 		return this.selfSize + this.childrenSize;
 	}
 
-	public int getStartChar() {
-		return this.startChar;
-	}
-
-	public int getCharLength() {
-		return this.charLength;
-	}
-
 	public boolean isBlock() {
 		return this.block;
+	}
+
+	public Statement getAstNode() {
+		return this.astNode;
 	}
 
 }

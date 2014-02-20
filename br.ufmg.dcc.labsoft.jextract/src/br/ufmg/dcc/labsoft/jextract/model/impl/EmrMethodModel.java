@@ -1,19 +1,20 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextract.model.impl;
+
+import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
-public class EmrMethodModel {
+import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
+
+class EmrMethodModel implements MethodModel {
 
 	private final ICompilationUnit compilationUnit;
 	private final IMethodBinding methodBinding;
 	private final EmrStatement[] statements;
 	private final EmrBlock[] blocks;
-
-	public static EmrMethodModel create(ICompilationUnit src, MethodDeclaration methodDeclaration) {
-		return new EmrMethodModelBuilder().getModel(src, methodDeclaration);
-	}
 
     public EmrMethodModel(ICompilationUnit src, MethodDeclaration methodDeclaration, EmrStatement[] statements, EmrBlock[] blocks) {
 	    this.compilationUnit = src;
@@ -22,12 +23,8 @@ public class EmrMethodModel {
 	    this.blocks = blocks;
     }
 
-	public EmrBlock[] getBlocks() {
-		return blocks;
-	}
-
-	public EmrStatement get(int index) {
-		return this.statements[index];
+	public List<EmrBlock> getBlocks() {
+		return Arrays.asList(blocks);
 	}
 
 	public int getTotalSize() {

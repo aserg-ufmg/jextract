@@ -17,7 +17,12 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 
+import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
+import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
+import br.ufmg.dcc.labsoft.jextract.model.impl.EmrMethodModelBuilder;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
@@ -70,10 +75,10 @@ public class SimpleEmrGenerator {
 		});
 	}
 
-	protected void forEachSlice(EmrMethodModel model, int minSize) {
+	protected void forEachSlice(MethodModel model, int minSize) {
 		int methodSize = model.getTotalSize();
-		for (EmrBlock block: model.getBlocks()) {
-			List<EmrStatement> children = block.getChildren();
+		for (BlockModel block: model.getBlocks()) {
+			List<? extends StatementModel> children = block.getChildren();
 			for (int last = children.size() - 1; last >= 0; last--) {
 				int sliceSize = 0;
 				for (int first = last; first >= 0; first--) {
@@ -81,9 +86,10 @@ public class SimpleEmrGenerator {
 					if (sliceSize >= minSize) {
 						int remaining = methodSize - sliceSize;
 						if (remaining >= minSize) {
-							int start = block.get(first).getStartChar();
-							EmrStatement lastStatement = block.get(last);
-							int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
+							int start = block.get(first).getAstNode().getStartPosition();
+							StatementModel lastStatement = block.get(last);
+							Statement lastStatementAstNode = lastStatement.getAstNode();
+							int length = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength() - start;
 							if (Utils.canExtract(model.getCompilationUnit(), start, length)) {
 								this.handleSequentialSlice(model, block, first, last, sliceSize);
 							}
@@ -93,11 +99,11 @@ public class SimpleEmrGenerator {
 			}
 		}
 	}
-	
-	private void handleSequentialSlice(EmrMethodModel model, EmrBlock block, int first, int last, int totalSize) {
-		int start = block.get(first).getStartChar();
-		EmrStatement lastStatement = block.get(last);
-		int length = lastStatement.getStartChar() + lastStatement.getCharLength() - start;
+
+	private void handleSequentialSlice(MethodModel model, BlockModel block, int first, int last, int totalSize) {
+		int start = block.get(first).getAstNode().getStartPosition();
+		Statement lastStatementAstNode = block.get(last).getAstNode();
+		int length = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength() - start;
 
 		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
 				model.getDeclaringType(), model.getMethodSignature(), ExtractionSlice.fromString(String.format("e%d:%d;", start,
@@ -116,7 +122,7 @@ public class SimpleEmrGenerator {
 	protected void addRecomendation(ExtractMethodRecomendation recomendation) {
 	    recomendations.add(recomendation);
     }
-	
+
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
@@ -125,9 +131,8 @@ public class SimpleEmrGenerator {
 		String key = declaringType + "\t" + methodSignature;
 		System.out.println("Analysing recomendations for " + key);
 
-		final EmrMethodModel emrMethod = EmrMethodModel.create(src, methodDeclaration);
+		final MethodModel emrMethod = EmrMethodModelBuilder.create(src, methodDeclaration);
 		this.forEachSlice(emrMethod, minSize);
 	}
 
-	
 }

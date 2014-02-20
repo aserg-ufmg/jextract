@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextract.model.impl;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -12,6 +12,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 
+import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class EmrMethodModelBuilder extends ASTVisitor {
@@ -19,7 +20,15 @@ public class EmrMethodModelBuilder extends ASTVisitor {
 	private LinkedHashMap<Object, EmrStatement> statementsMap;
 	private List<EmrBlock> blocks;
 
-	public EmrMethodModel getModel(ICompilationUnit src, MethodDeclaration methodDeclaration) {
+	private EmrMethodModelBuilder() {
+		// private constructor
+	}
+
+	public static MethodModel create(ICompilationUnit src, MethodDeclaration methodDeclaration) {
+		return new EmrMethodModelBuilder().getModel(src, methodDeclaration);
+	}
+
+	public MethodModel getModel(ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		this.statementsMap = new LinkedHashMap<Object, EmrStatement>();
 		this.blocks = new ArrayList<EmrBlock>();
 		methodDeclaration.accept(this);
