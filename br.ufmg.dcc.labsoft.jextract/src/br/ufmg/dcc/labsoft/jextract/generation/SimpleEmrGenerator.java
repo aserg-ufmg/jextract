@@ -22,7 +22,7 @@ import org.eclipse.jdt.core.dom.Statement;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
-import br.ufmg.dcc.labsoft.jextract.model.impl.EmrMethodModelBuilder;
+import br.ufmg.dcc.labsoft.jextract.model.impl.MethodModelBuilder;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
@@ -65,6 +65,7 @@ public class SimpleEmrGenerator {
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
 		cu.accept(new ASTVisitor() {
+			@Override
 			public boolean visit(MethodDeclaration methodDeclaration) {
 				IMethod javaElement = (IMethod) methodDeclaration.resolveBinding().getJavaElement();
 				if (onlyThisMethod == null || onlyThisMethod.isSimilar(javaElement)) {
@@ -82,7 +83,7 @@ public class SimpleEmrGenerator {
 			for (int last = children.size() - 1; last >= 0; last--) {
 				int sliceSize = 0;
 				for (int first = last; first >= 0; first--) {
-					sliceSize += children.get(first).getSize();
+					sliceSize += children.get(first).getTotalSize();
 					if (sliceSize >= minSize) {
 						int remaining = methodSize - sliceSize;
 						if (remaining >= minSize) {
@@ -131,7 +132,7 @@ public class SimpleEmrGenerator {
 		String key = declaringType + "\t" + methodSignature;
 		System.out.println("Analysing recomendations for " + key);
 
-		final MethodModel emrMethod = EmrMethodModelBuilder.create(src, methodDeclaration);
+		final MethodModel emrMethod = MethodModelBuilder.create(src, methodDeclaration);
 		this.forEachSlice(emrMethod, minSize);
 	}
 

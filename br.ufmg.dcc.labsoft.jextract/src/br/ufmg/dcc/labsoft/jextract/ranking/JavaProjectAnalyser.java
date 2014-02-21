@@ -94,6 +94,7 @@ public class JavaProjectAnalyser {
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
 		cu.accept(new ASTVisitor() {
+			@Override
 			public boolean visit(MethodDeclaration methodDeclaration) {
 				analyseMethod(src, methodDeclaration);
 				return false;

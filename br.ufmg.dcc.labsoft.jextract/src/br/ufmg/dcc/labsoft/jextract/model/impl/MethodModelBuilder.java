@@ -15,26 +15,31 @@ import org.eclipse.jdt.core.dom.SwitchStatement;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
-public class EmrMethodModelBuilder extends ASTVisitor {
+public class MethodModelBuilder extends ASTVisitor {
 
-	private LinkedHashMap<Object, EmrStatement> statementsMap;
-	private List<EmrBlock> blocks;
+	private LinkedHashMap<Object, StatementImpl> statementsMap;
+	private List<BlockImpl> blocks;
+	private Pdg pdg;
 
-	private EmrMethodModelBuilder() {
+	private MethodModelBuilder() {
 		// private constructor
 	}
 
 	public static MethodModel create(ICompilationUnit src, MethodDeclaration methodDeclaration) {
-		return new EmrMethodModelBuilder().getModel(src, methodDeclaration);
+		return new MethodModelBuilder().getModel(src, methodDeclaration);
 	}
 
 	public MethodModel getModel(ICompilationUnit src, MethodDeclaration methodDeclaration) {
-		this.statementsMap = new LinkedHashMap<Object, EmrStatement>();
-		this.blocks = new ArrayList<EmrBlock>();
+		this.statementsMap = new LinkedHashMap<Object, StatementImpl>();
+		this.blocks = new ArrayList<BlockImpl>();
+		this.pdg = new Pdg();
+		
 		methodDeclaration.accept(this);
-		EmrStatement[] sa = this.statementsMap.values().toArray(new EmrStatement[this.statementsMap.size()]);
-		EmrBlock[] ba = this.blocks.toArray(new EmrBlock[this.blocks.size()]);
-		return new EmrMethodModel(src, methodDeclaration, sa, ba);
+		
+		// TODO build pdg
+		
+		BlockImpl[] ba = this.blocks.toArray(new BlockImpl[this.blocks.size()]);
+		return new MethodModelImpl(src, methodDeclaration, ba);
 	}
 
 	@Override
@@ -42,9 +47,9 @@ public class EmrMethodModelBuilder extends ASTVisitor {
 		if (node instanceof Statement) {
 			Statement node1 = (Statement) node;
 			// O pai direto de um statement pode não ser um statement quando existe inner class na jogada.
-			EmrStatement parent = this.statementsMap.get(Utils.findEnclosingStatement(node1.getParent()));
+			StatementImpl parent = this.statementsMap.get(Utils.findEnclosingStatement(node1.getParent()));
 			boolean blockLike = node1 instanceof Block || node1 instanceof SwitchStatement;
-			EmrStatement emrStatement = new EmrStatement(this.statementsMap.size(), node1, parent, blockLike);
+			StatementImpl emrStatement = new StatementImpl(this.statementsMap.size(), node1, parent, blockLike, this.pdg);
 			this.statementsMap.put(node1, emrStatement);
 		}
 	}
@@ -53,30 +58,30 @@ public class EmrMethodModelBuilder extends ASTVisitor {
 	public void postVisit(ASTNode node) {
 		if (node instanceof Statement) {
 			Statement stmNode = (Statement) node;
-			EmrStatement thisStatement = this.statementsMap.get(stmNode);
+			StatementImpl thisStatement = this.statementsMap.get(stmNode);
 			if (node instanceof Block) {
-				// Cria um bloco com todos os statements filhos.
+				// Creates a block with all children.
 				createBlock(thisStatement, ((Block) node).statements());
 			} else if (node instanceof SwitchStatement) {
 				createBlock(thisStatement, ((SwitchStatement) node).statements());
 			} else if (!thisStatement.isBlock() && !thisStatement.parent.isBlock()) {
-				// Cria um bloco virtual englobando um único statement.
+				// Creates a block with a single statement.
 				createVirtualBlock(thisStatement);
 			}
 		}
 	}
 
-	private void createBlock(EmrStatement thisStatement, List statements) {
-		EmrBlock emrBlock = new EmrBlock(thisStatement);
+	private void createBlock(StatementImpl thisStatement, @SuppressWarnings("rawtypes") List statements) {
+		BlockImpl emrBlock = new BlockImpl(thisStatement);
 		for (Object stm : statements) {
-			EmrStatement statement = this.statementsMap.get(stm);
+			StatementImpl statement = this.statementsMap.get(stm);
 			emrBlock.appendStatement(statement);
 		}
 		this.blocks.add(emrBlock);
 	}
 
-	private void createVirtualBlock(EmrStatement thisStatement) {
-		EmrBlock emrBlock = new EmrBlock(thisStatement);
+	private void createVirtualBlock(StatementImpl thisStatement) {
+		BlockImpl emrBlock = new BlockImpl(thisStatement);
 		emrBlock.appendStatement(thisStatement);
 		this.blocks.add(emrBlock);
 	}
