@@ -4,13 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
-import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
-import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
-import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -18,6 +11,14 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
+
+import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
+import br.ufmg.dcc.labsoft.jextract.generation.NonSequentialEmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
+import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
 public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
@@ -95,7 +96,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 			// int k = dialog.getFirstK();
 
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
+			//SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
+			SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
 			analyser.generateRecomendations(project);
 
 			// List<ExtractMethodRecomendation> filtered =
