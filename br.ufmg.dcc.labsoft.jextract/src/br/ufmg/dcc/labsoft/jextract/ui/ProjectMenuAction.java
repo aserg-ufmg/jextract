@@ -13,6 +13,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
+import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.generation.NonSequentialEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
@@ -45,22 +46,24 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 
 		List<ExtractMethodRecomendation> recomendations;
-		boolean checkPreconditions = false;
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.importEmr")) {
 			recomendations = importFromFile(project);
+			JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, false);
+			analyser.analyseProject(project);
 		} else if (actionId.equals("br.ufmg.dcc.labsoft.jextract.showGoldset")) {
 			EmrFileReader reader = new EmrFileReader();
 			recomendations = reader.read(project.getLocation().toString() + "/goldset.txt");
-			checkPreconditions = true;
+			// Sort the recomendations.
+			JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, true);
+			analyser.analyseProject(project);
 		} else if (actionId.equals("br.ufmg.dcc.labsoft.jextract.findEmr")) {
-			recomendations = findEmr(project);
+			recomendations = findEmr(project, null);
+		} else if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
+			ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
+			recomendations = findEmr(project, goldset);
 		} else {
 			recomendations = Collections.emptyList();
 		}
-
-		// Sort the recomendations.
-		JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, checkPreconditions);
-		analyser.analyseProject(project);
 
 		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage
@@ -89,7 +92,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		return recomendations;
 	}
 
-	private List<ExtractMethodRecomendation> findEmr(IProject project) throws Exception {
+	private List<ExtractMethodRecomendation> findEmr(IProject project, ProjectRelevantSet goldset) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			Integer minSize = dialog.getMinSize();
@@ -98,6 +101,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			//SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
 			SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
+			analyser.setGoldset(goldset);
 			analyser.generateRecomendations(project);
 
 			// List<ExtractMethodRecomendation> filtered =

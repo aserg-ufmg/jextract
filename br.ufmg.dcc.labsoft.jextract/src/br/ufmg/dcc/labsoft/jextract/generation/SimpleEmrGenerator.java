@@ -1,5 +1,6 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -19,6 +20,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 
+import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
@@ -31,12 +33,21 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 public class SimpleEmrGenerator {
 
 	private final List<ExtractMethodRecomendation> recomendations;
+	private List<ExtractMethodRecomendation> recomendationsForMethod;
 	protected final int minSize;
+	private EmrRecommender recommender;
+	private ProjectRelevantSet goldset = null;
 
 	public SimpleEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
 		super();
 		this.recomendations = recomendations;
 		this.minSize = minSize;
+		this.recommender = new EmrRecommender();
+	}
+
+	public void setGoldset(ProjectRelevantSet goldset) {
+		this.goldset = goldset;
+		this.recommender.setGoldset(goldset);
 	}
 
 	public void generateRecomendations(IProject project) throws Exception {
@@ -120,7 +131,7 @@ public class SimpleEmrGenerator {
 
 		recomendation.setOk(true);
 
-	    recomendations.add(recomendation);
+		this.recomendationsForMethod.add(recomendation);
     }
 
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
@@ -128,11 +139,24 @@ public class SimpleEmrGenerator {
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
 
+		if (this.goldset != null && !this.goldset.isMethodAvailable(declaringType, methodSignature)) {
+			return;
+		}
+		
 		String key = declaringType + "\t" + methodSignature;
-		System.out.println("Analysing recomendations for " + key);
+		System.out.print("Analysing recomendations for " + key + " ... ");
+		long time1 = System.currentTimeMillis();
 
 		final MethodModel emrMethod = MethodModelBuilder.create(src, methodDeclaration);
+		this.recomendationsForMethod = new ArrayList<ExtractMethodRecomendation>();
 		this.forEachSlice(emrMethod);
+		System.out.println("done in " + (System.currentTimeMillis() - time1) + " ms.");
+		
+		System.out.print("Ranking ... ");
+		long time2 = System.currentTimeMillis();
+		this.recomendations.addAll(this.recommender.rankAndFilterForMethod(src, methodDeclaration, this.recomendationsForMethod));
+		System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
+		
 	}
 
 }

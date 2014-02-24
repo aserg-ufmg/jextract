@@ -12,7 +12,6 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
-import br.ufmg.dcc.labsoft.jextract.generation.NonSequentialEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
@@ -60,8 +59,8 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 			// int k = dialog.getFirstK();
 
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			//SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
-			SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
+			SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
+			//SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
 			analyser.generateRecomendations(method);
 
 			// List<ExtractMethodRecomendation> filtered =
