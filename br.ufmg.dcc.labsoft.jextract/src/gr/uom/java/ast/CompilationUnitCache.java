@@ -262,6 +262,32 @@ public class CompilationUnitCache extends Indexer {
 		}
 	}
 
+	public void addCompilationUnit(ITypeRoot iTypeRoot, CompilationUnit compilationUnit) {
+		if(iTypeRootList.size() < MAX_CACHE_SIZE) {
+			iTypeRootList.add(iTypeRoot);
+			compilationUnitList.add(compilationUnit);
+		}
+		else {
+			if(!lockedTypeRoots.isEmpty()) {
+				int indexToBeRemoved = 0;
+				int counter = 0;
+				for(ITypeRoot lockedTypeRoot : lockedTypeRoots) {
+					if(iTypeRootList.get(counter).equals(lockedTypeRoot)) {
+						indexToBeRemoved++;
+					}
+					counter++;
+				}
+				iTypeRootList.remove(indexToBeRemoved);
+				compilationUnitList.remove(indexToBeRemoved);
+			}
+			else {
+				iTypeRootList.removeFirst();
+				compilationUnitList.removeFirst();
+			}
+			iTypeRootList.add(iTypeRoot);
+			compilationUnitList.add(compilationUnit);
+		}
+	}
 	public void compilationUnitChanged(ICompilationUnit compilationUnit) {
 		changedCompilationUnits.add(compilationUnit);
 	}

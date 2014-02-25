@@ -1,7 +1,19 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
+import gr.uom.java.ast.ASTInformationGenerator;
+import gr.uom.java.ast.CompilationUnitCache;
+import gr.uom.java.ast.MethodObject;
+import gr.uom.java.ast.decomposition.cfg.CFG;
+import gr.uom.java.ast.decomposition.graph.GraphEdge;
+import gr.uom.java.ast.decomposition.graph.GraphNode;
+import gr.uom.java.ast.decomposition.pdg.PDG;
+import gr.uom.java.ast.decomposition.pdg.PDGDependence;
+import gr.uom.java.ast.decomposition.pdg.PDGNode;
+
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -75,6 +87,9 @@ public class SimpleEmrGenerator {
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setResolveBindings(true);
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+		//we need that for JDeodorant :)
+		CompilationUnitCache.getInstance().addCompilationUnit(src, cu);
+		ASTInformationGenerator.setCurrentITypeRoot(src);
 
 		cu.accept(new ASTVisitor() {
 			@Override
@@ -135,6 +150,26 @@ public class SimpleEmrGenerator {
     }
 
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
+		//this is the code that generates the control flow graph and program dependence graph of the method
+		MethodObject methodObject = new MethodObject(methodDeclaration);
+		CFG cfg = new CFG(methodObject);
+		PDG pdg = new PDG(cfg);
+		//from the pdg we can get the nodes and for each node the incoming and outgoing dependencies
+		Set<GraphNode> nodes = pdg.getNodes();
+		for(GraphNode node : nodes) {
+			PDGNode pdgNode = (PDGNode)node;
+			Iterator<GraphEdge> incomingDeps = pdgNode.getIncomingDependenceIterator();
+			while(incomingDeps.hasNext()) {
+				PDGDependence dep = (PDGDependence)incomingDeps.next();
+				System.out.println(dep);
+			}
+			Iterator<GraphEdge> outgoingDeps = pdgNode.getOutgoingDependenceIterator();
+			while(outgoingDeps.hasNext()) {
+				PDGDependence dep = (PDGDependence)outgoingDeps.next();
+				System.out.println(dep);
+			}
+		}
+		
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
