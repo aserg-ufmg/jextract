@@ -5,10 +5,13 @@ import org.eclipse.jdt.core.dom.Statement;
 
 public interface StatementModel {
 
+	BlockModel getParentBlock();
+
 	int getIndexInBlock();
 
-	int getSize();
+	int getTotalSize();
 
 	Statement getAstNode();
 
+	DependencyRelationship getRelationship(StatementModel other);
 }

@@ -8,6 +8,6 @@ public interface BlockModel {
 
 	StatementModel get(int index);
 
-	int getSize();
+	int getTotalSize();
 
 }

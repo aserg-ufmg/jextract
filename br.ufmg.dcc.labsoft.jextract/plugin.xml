@@ -38,6 +38,13 @@
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.evaluate"
+               label="Evaluate using oracle"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
                id="br.ufmg.dcc.labsoft.jextract.inlineMethods"
                label="Introduce inline methods"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">

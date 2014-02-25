@@ -52,4 +52,8 @@ public class ProjectRelevantSet {
 	public boolean isMethodAvailable(ExtractMethodRecomendation rec) {
 		return coveredMethods.contains(getClassAndMethod(rec.className, rec.method));
 	}
+
+	public boolean isMethodAvailable(String className, String method) {
+		return coveredMethods.contains(getClassAndMethod(className, method));
+	}
 }

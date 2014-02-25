@@ -9,41 +9,46 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 
-class EmrMethodModel implements MethodModel {
+class MethodModelImpl implements MethodModel {
 
 	private final ICompilationUnit compilationUnit;
 	private final IMethodBinding methodBinding;
-	private final EmrStatement[] statements;
-	private final EmrBlock[] blocks;
+	//private final EmrStatement[] statements;
+	private final BlockImpl[] blocks;
 
-    public EmrMethodModel(ICompilationUnit src, MethodDeclaration methodDeclaration, EmrStatement[] statements, EmrBlock[] blocks) {
+    public MethodModelImpl(ICompilationUnit src, MethodDeclaration methodDeclaration, BlockImpl[] blocks) {
 	    this.compilationUnit = src;
 	    this.methodBinding = methodDeclaration.resolveBinding();
-	    this.statements = statements;
+	    //this.statements = statements;
 	    this.blocks = blocks;
     }
 
-	public List<EmrBlock> getBlocks() {
+    @Override
+	public List<BlockImpl> getBlocks() {
 		return Arrays.asList(blocks);
 	}
 
+    @Override
 	public int getTotalSize() {
 		if (this.blocks.length == 0) {
 			return 0;
 		}
-		return this.blocks[this.blocks.length - 1].getSize();
+		return this.blocks[this.blocks.length - 1].getTotalSize();
 	}
 
+    @Override
 	public String getMethodSignature() {
 		return this.methodBinding.toString();
 	}
 	
+    @Override
 	public String getDeclaringType() {
 		return methodBinding.getDeclaringClass().getQualifiedName();
 	}
 
+    @Override
 	public ICompilationUnit getCompilationUnit() {
-		return compilationUnit;
+		return this.compilationUnit;
 	}
 
 }

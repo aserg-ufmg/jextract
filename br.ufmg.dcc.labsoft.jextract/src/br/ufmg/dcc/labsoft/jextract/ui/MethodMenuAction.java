@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jface.action.IAction;
@@ -15,6 +11,10 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
+
+import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
 public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 
@@ -60,6 +60,7 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
+			//SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
 			analyser.generateRecomendations(method);
 
 			// List<ExtractMethodRecomendation> filtered =
