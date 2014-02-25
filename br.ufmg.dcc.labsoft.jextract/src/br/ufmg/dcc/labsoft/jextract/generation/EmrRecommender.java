@@ -32,16 +32,29 @@ public class EmrRecommender {
 		List<ExtractMethodRecomendation> result = new ArrayList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
 		Utils.sort(recomendations, EmrScoringFn.KUL_TVM, false);
+		int i = 0;
+		String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
+		System.out.print(id + ": ");
+		
+		boolean found = false;
 		for (ExtractMethodRecomendation recommendation : recomendations) {
 			result.add(recommendation);
+			i++;
 			if (this.goldset != null) {
 				if (this.goldset.contains(recommendation)) {
+					System.out.println(i);
+					found = true;
 					break;
 				}
 			} else if (result.size() >= this.maxPerMethod) {
 				break;
 			}
 		}
+		
+		if (!found) {
+			System.out.println("not found");
+		}
+		
 		return result;
 	}
 

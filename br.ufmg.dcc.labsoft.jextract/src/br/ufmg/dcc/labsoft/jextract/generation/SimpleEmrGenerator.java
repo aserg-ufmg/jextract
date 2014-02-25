@@ -144,18 +144,18 @@ public class SimpleEmrGenerator {
 		}
 		
 		String key = declaringType + "\t" + methodSignature;
-		System.out.print("Analysing recomendations for " + key + " ... ");
+		//System.out.print("Analysing recomendations for " + key + " ... ");
 		long time1 = System.currentTimeMillis();
 
 		final MethodModel emrMethod = MethodModelBuilder.create(src, methodDeclaration);
 		this.recomendationsForMethod = new ArrayList<ExtractMethodRecomendation>();
 		this.forEachSlice(emrMethod);
-		System.out.println("done in " + (System.currentTimeMillis() - time1) + " ms.");
+		//System.out.println("done in " + (System.currentTimeMillis() - time1) + " ms.");
 		
-		System.out.print("Ranking ... ");
+		//System.out.print("Ranking ... ");
 		long time2 = System.currentTimeMillis();
 		this.recomendations.addAll(this.recommender.rankAndFilterForMethod(src, methodDeclaration, this.recomendationsForMethod));
-		System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
+		//System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
 		
 	}
 
