@@ -123,8 +123,9 @@ public class PDGExpression {
 			//create pseudo state variable
 			String originClass = methodInvocationObject.getOriginClassName();
 			String variableName = "state";
-			String variableBindingKey = variableName + originClass;
-			String variableType = "String";
+			String variableType = "java.lang.String";
+			String variableBindingKey = "L" + originClass.replaceAll(".", "/") + ";" +
+			"." + variableName + ")" + "L" + variableType.replaceAll(".", "/") + ";";
 			PlainVariable pseudoVariable = new PlainVariable(variableBindingKey, variableName, variableType, true, false);
 			AbstractVariable composite = composeVariable(variable, pseudoVariable);
 			definedVariables.add(composite);
