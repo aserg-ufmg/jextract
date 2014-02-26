@@ -14,6 +14,8 @@ import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 
+	private final int maxFragments = 2;
+
 	public NonSequentialEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
 		super(recomendations, minSize);
 	}
@@ -23,29 +25,32 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		//int methodSize = model.getTotalSize();
 		for (BlockModel block: model.getBlocks()) {
 			StatementSelection selected = new StatementSelection(block);
-			this.select(model, block, selected, 0);
+			this.select(model, block, selected, 0, false, 0);
 		}
 	}
 
-	private void select(MethodModel model, BlockModel block, StatementSelection selected, int i) {
+	private void select(MethodModel model, BlockModel block, StatementSelection selected, int i, boolean lastSelected, int fragments) {
 	    if (i >= block.getChildren().size()) {
 	    	if (selected.getTotalSize() >= this.minSize) {
 	    		this.handleSlice(model, block, selected);
 	    	}
 	    } else {
-	    	if (this.canSelect(model, block, selected, i, true)) {
+	    	if (this.canSelect(model, block, selected, i, true, true, lastSelected ? fragments : fragments + 1)) {
 	    		selected.select(i);
-	    		this.select(model, block, selected, i + 1);
+	    		this.select(model, block, selected, i + 1, true, lastSelected ? fragments : fragments + 1);
 	    		selected.unselect(i);
 	    	}
-	    	if (this.canSelect(model, block, selected, i, false)) {
-	    		this.select(model, block, selected, i + 1);
+	    	if (this.canSelect(model, block, selected, i, false, false, fragments)) {
+	    		this.select(model, block, selected, i + 1, false, fragments);
 	    	}
 	    }
     }
 
-	private boolean canSelect(MethodModel model, BlockModel block, StatementSelection selected, int i, boolean b) {
+	private boolean canSelect(MethodModel model, BlockModel block, StatementSelection selected, int i, boolean b, boolean lastSelected, int fragments) {
 		if (b) {
+			if (fragments > this.maxFragments) {
+				return false;
+			}
 			int newSize = selected.getTotalSize() + block.get(i).getTotalSize();
 			if ((model.getTotalSize() - newSize) < this.minSize) {
 				return false;

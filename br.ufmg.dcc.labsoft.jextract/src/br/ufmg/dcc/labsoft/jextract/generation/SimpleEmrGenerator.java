@@ -151,6 +151,7 @@ public class SimpleEmrGenerator {
 
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		//this is the code that generates the control flow graph and program dependence graph of the method
+		/*
 		MethodObject methodObject = new MethodObject(methodDeclaration);
 		CFG cfg = new CFG(methodObject);
 		PDG pdg = new PDG(cfg);
@@ -169,7 +170,7 @@ public class SimpleEmrGenerator {
 				System.out.println(dep);
 			}
 		}
-		
+		*/
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();

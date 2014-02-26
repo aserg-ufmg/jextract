@@ -30,8 +30,13 @@ public class EmrComparator implements Comparator<ExtractMethodRecomendation> {
 				return compM;
 			}
 		}
+		// Sort by score
 		int compR = - Double.compare(this.scoringFn.score(o1), this.scoringFn.score(o2));
-		return compR == 0 ? o1.id - o2.id : compR; 
+		// second by safeness
+		compR = compR == 0 ? -(o1.getSafeness() - o2.getSafeness()) : compR;
+		// third by id
+		compR = compR == 0 ? o1.id - o2.id : compR;
+		return compR;
 	}
 
 }

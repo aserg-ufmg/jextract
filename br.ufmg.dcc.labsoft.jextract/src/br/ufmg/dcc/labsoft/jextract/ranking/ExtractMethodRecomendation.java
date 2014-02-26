@@ -210,4 +210,7 @@ public class ExtractMethodRecomendation {
 		return ssimM;
 	}
 
+	public int getSafeness() {
+		return this.slice.isComposed() ? 0 : 1;
+	}
 }
