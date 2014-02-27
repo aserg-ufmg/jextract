@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -42,7 +41,7 @@ public class Utils {
 		return filtered;
 	}
 
-	public static void asString(StringBuilder sb, Set<String> methodSet) {
+	public static void asString(StringBuilder sb, Iterable<String> methodSet) {
 		sb.append("{\n");
 		for (String item : methodSet) {
 			sb.append("  ");
@@ -52,7 +51,7 @@ public class Utils {
 		sb.append("}\n");
 	}
 
-	public static String explain(SetsSimilarity<String> ssimT, SetsSimilarity<String> ssimV, SetsSimilarity<String> ssimM) {
+	public static String explain(SetsSimilarity ssimT, SetsSimilarity ssimV, SetsSimilarity ssimM) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("# Types:\n");
 		printSets(ssimT, sb);
@@ -63,7 +62,7 @@ public class Utils {
 		return sb.toString();
 	}
 
-	private static void printSets(SetsSimilarity<String> ssimT, StringBuilder sb) {
+	private static void printSets(SetsSimilarity ssimT, StringBuilder sb) {
 		sb.append(String.format("a=%d ", ssimT.getA()));
 		Utils.asString(sb, ssimT.intersection);
 		sb.append(String.format("b=%d ", ssimT.getB()));

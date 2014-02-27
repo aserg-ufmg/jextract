@@ -8,11 +8,15 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 
+import br.ufmg.dcc.labsoft.jextract.model.HasEntityDependencies;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
+import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class MethodModelBuilder extends ASTVisitor {
@@ -20,6 +24,7 @@ public class MethodModelBuilder extends ASTVisitor {
 	private LinkedHashMap<Object, StatementImpl> statementsMap;
 	private List<BlockImpl> blocks;
 	private Pdg pdg;
+	private MethodDeclaration methodDeclaration;
 
 	private MethodModelBuilder() {
 		// private constructor
@@ -30,6 +35,7 @@ public class MethodModelBuilder extends ASTVisitor {
 	}
 
 	public MethodModel getModel(ICompilationUnit src, MethodDeclaration methodDeclaration) {
+		this.methodDeclaration = methodDeclaration;
 		this.statementsMap = new LinkedHashMap<Object, StatementImpl>();
 		this.blocks = new ArrayList<BlockImpl>();
 		this.pdg = new Pdg();
@@ -39,7 +45,9 @@ public class MethodModelBuilder extends ASTVisitor {
 		// TODO build pdg
 		
 		BlockImpl[] ba = this.blocks.toArray(new BlockImpl[this.blocks.size()]);
-		return new MethodModelImpl(src, methodDeclaration, ba);
+		MethodModelImpl methodModel = new MethodModelImpl(src, methodDeclaration, ba);
+		
+		return methodModel;
 	}
 
 	@Override
@@ -58,7 +66,7 @@ public class MethodModelBuilder extends ASTVisitor {
 	public void postVisit(ASTNode node) {
 		if (node instanceof Statement) {
 			Statement stmNode = (Statement) node;
-			StatementImpl thisStatement = this.statementsMap.get(stmNode);
+			final StatementImpl thisStatement = this.statementsMap.get(stmNode);
 			if (node instanceof Block) {
 				// Creates a block with all children.
 				createBlock(thisStatement, ((Block) node).statements());
@@ -68,8 +76,26 @@ public class MethodModelBuilder extends ASTVisitor {
 				// Creates a block with a single statement.
 				createVirtualBlock(thisStatement);
 			}
+			fillEntities(stmNode, thisStatement);
 		}
 	}
+
+	private void fillEntities(ASTNode stmNode, final HasEntityDependencies thisStatement) {
+	    stmNode.accept(new DependenciesAstVisitor(this.methodDeclaration.resolveBinding().getDeclaringClass()) {
+	    	@Override
+	    	public void onModuleAccess(ASTNode node, String packageName) {
+	    		thisStatement.getEntitiesP().add(packageName);
+	    	}
+	    	@Override
+	    	public void onTypeAccess(ASTNode node, ITypeBinding binding) {
+	    		thisStatement.getEntitiesP().add(binding.getKey());
+	    	}
+	    	@Override
+	    	public void onVariableAccess(ASTNode node, IVariableBinding binding) {
+	    		thisStatement.getEntitiesP().add(binding.getKey());
+	    	}
+	    });
+    }
 
 	private void createBlock(StatementImpl thisStatement, @SuppressWarnings("rawtypes") List statements) {
 		BlockImpl emrBlock = new BlockImpl(thisStatement);

@@ -12,9 +12,9 @@ public class ExtractMethodRecomendation {
 	private int extractedSize;
 	private int originalSize;
 	final ExtractionSlice slice;
-	private SetsSimilarity<String> ssimT;
-	private SetsSimilarity<String> ssimV;
-	private SetsSimilarity<String> ssimM;
+	private SetsSimilarity ssimT;
+	private SetsSimilarity ssimV;
+	private SetsSimilarity ssimM;
 	private double pt = 0.0;
 	private double pv = 0.0;
 	private double pm = 0.0;
@@ -74,15 +74,15 @@ public class ExtractMethodRecomendation {
 		return this.ok;
 	}
 
-	public void setSsimT(SetsSimilarity<String> ssimT) {
+	public void setSsimT(SetsSimilarity ssimT) {
 		this.ssimT = ssimT;
 	}
 
-	public void setSsimV(SetsSimilarity<String> ssimV) {
+	public void setSsimV(SetsSimilarity ssimV) {
 		this.ssimV = ssimV;
 	}
 
-	public void setSsimM(SetsSimilarity<String> ssimM) {
+	public void setSsimM(SetsSimilarity ssimM) {
 		this.ssimM = ssimM;
 	}
 
@@ -198,15 +198,15 @@ public class ExtractMethodRecomendation {
 		this.availableInGoldSet = availableInGoldSet;
 	}
 
-	public SetsSimilarity<String> getSsimT() {
+	public SetsSimilarity getSsimT() {
 		return ssimT;
 	}
 
-	public SetsSimilarity<String> getSsimV() {
+	public SetsSimilarity getSsimV() {
 		return ssimV;
 	}
 
-	public SetsSimilarity<String> getSsimM() {
+	public SetsSimilarity getSsimM() {
 		return ssimM;
 	}
 

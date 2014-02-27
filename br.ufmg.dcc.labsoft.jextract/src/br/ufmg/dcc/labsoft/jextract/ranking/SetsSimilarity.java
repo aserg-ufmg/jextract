@@ -3,29 +3,37 @@ package br.ufmg.dcc.labsoft.jextract.ranking;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SetsSimilarity<T> {
+import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 
-	final Set<T> intersection = new HashSet<T>();
-	final Set<T> set1 = new HashSet<T>();
-	final Set<T> set2 = new HashSet<T>();
+public class SetsSimilarity {
 
-	public void addToSet1(T item) {
+	final Set<String> intersection;
+	final EntitySet set1;
+	final EntitySet set2;
+
+    public SetsSimilarity(EntitySet set1, EntitySet set2) {
+    	this.intersection = new HashSet<String>();
+	    this.set1 = set1;
+	    this.set2 = set2;
+    }
+
+	public SetsSimilarity() {
+    	this(new EntitySet(), new EntitySet());
+    }
+
+	public void addToSet1(String item) {
 		set1.add(item);
 	}
 
-	public void addToSet2(T item) {
+	public void addToSet2(String item) {
 		set2.add(item);
 	}
 
 	public void end() {
-		for (T elem : set2) {
+		for (String elem : set2) {
 			if (set1.contains(elem)) {
 				intersection.add(elem);
 			}
-		}
-		for (T elem : intersection) {
-			set2.remove(elem);
-			set1.remove(elem);
 		}
 	}
 
@@ -34,11 +42,11 @@ public class SetsSimilarity<T> {
 	}
 
 	public int getB() {
-		return set1.size();
+		return set1.size() - intersection.size();
 	}
 
 	public int getC() {
-		return set2.size();
+		return set2.size() - intersection.size();
 	}
 	
 	public double sim(Coefficient coefficient) {

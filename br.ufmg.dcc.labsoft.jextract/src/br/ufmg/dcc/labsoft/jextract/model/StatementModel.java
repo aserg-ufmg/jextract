@@ -3,7 +3,7 @@ package br.ufmg.dcc.labsoft.jextract.model;
 import org.eclipse.jdt.core.dom.Statement;
 
 
-public interface StatementModel {
+public interface StatementModel extends HasEntityDependencies {
 
 	BlockModel getParentBlock();
 

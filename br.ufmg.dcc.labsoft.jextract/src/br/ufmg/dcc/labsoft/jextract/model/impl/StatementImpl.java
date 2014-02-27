@@ -5,6 +5,7 @@ import org.eclipse.jdt.core.dom.Statement;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.DependencyRelationship;
+import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 
 
@@ -20,6 +21,10 @@ class StatementImpl implements StatementModel {
 	Statement astNode = null;
 	BlockModel parentBlock = null;
 	Pdg pdg = null;
+
+	private final EntitySet entitiesP = new EntitySet();
+	private final EntitySet entitiesT = new EntitySet();
+	private final EntitySet entitiesV = new EntitySet();
 
 	private static final StatementImpl NIL = new StatementImpl(){
 		@Override
@@ -89,5 +94,17 @@ class StatementImpl implements StatementModel {
 	public void setParentBlock(BlockModel parentBlock) {
 		this.parentBlock = parentBlock;
 	}
-	
+
+	public EntitySet getEntitiesP() {
+		return entitiesP;
+	}
+
+	public EntitySet getEntitiesT() {
+		return entitiesT;
+	}
+
+	public EntitySet getEntitiesV() {
+		return entitiesV;
+	}
+
 }

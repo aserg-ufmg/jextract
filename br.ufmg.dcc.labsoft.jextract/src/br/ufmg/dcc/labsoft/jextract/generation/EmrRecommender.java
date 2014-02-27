@@ -78,9 +78,9 @@ public class EmrRecommender {
 				alternative.setSourceFile(src);
 			}
 
-			SetsSimilarity<String> ssimT = this.computeSetsSimilarity(methodDeclaration, slice, true, false, false);
-			SetsSimilarity<String> ssimV = this.computeSetsSimilarity(methodDeclaration, slice, false, true, false);
-			SetsSimilarity<String> ssimM = this.computeSetsSimilarity(methodDeclaration, slice, false, false, true);
+			SetsSimilarity ssimT = this.computeSetsSimilarity(methodDeclaration, slice, true, false, false);
+			SetsSimilarity ssimV = this.computeSetsSimilarity(methodDeclaration, slice, false, true, false);
+			SetsSimilarity ssimM = this.computeSetsSimilarity(methodDeclaration, slice, false, false, true);
 			alternative.setSsimT(ssimT);
 			alternative.setSsimV(ssimV);
 			alternative.setSsimM(ssimM);
@@ -91,10 +91,10 @@ public class EmrRecommender {
 		}
 	}
 
-	private SetsSimilarity<String> computeSetsSimilarity(MethodDeclaration methodDeclaration,
+	private SetsSimilarity computeSetsSimilarity(MethodDeclaration methodDeclaration,
 	        final ExtractionSlice slice, final boolean typeAccess, final boolean variableAccess,
 	        final boolean packageAccess) {
-		final SetsSimilarity<String> ssim = new SetsSimilarity<String>();
+		final SetsSimilarity ssim = new SetsSimilarity();
 		methodDeclaration.accept(new DependenciesAstVisitor(methodDeclaration.resolveBinding().getDeclaringClass()) {
 			@Override
 			public void onTypeAccess(ASTNode node, ITypeBinding binding) {
