@@ -42,8 +42,8 @@ import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrRankFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrScoringFn;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
+import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 
 public class ExtractMethodRecomendationsView extends ViewPart {
@@ -105,6 +105,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 //		addColumnDuplicatedSize();
 		
 		addColumnScore(EmrScoringFn.KUL_TVM).getColumn();
+		addColumnScore(EmrScoringFn.X_KUL_TVM).getColumn();
 //		addColumnScore(EmrScoringFn.PSC_TVM).getColumn();
 //		addColumnScore(EmrScoringFn.PJACD_T).getColumn();
 //		addColumnScore(EmrScoringFn.PKULD_T).getColumn();

@@ -24,6 +24,7 @@ public class ExtractMethodRecomendation {
 	private boolean relevant = false;
 	private boolean similar = false;
 	private boolean availableInGoldSet = false;
+	private double score = 0.0;
 
 	public ExtractMethodRecomendation(int id, String className, String method, ExtractionSlice slice) {
 		this.id = id;
@@ -213,4 +214,13 @@ public class ExtractMethodRecomendation {
 	public int getSafeness() {
 		return this.slice.isComposed() ? 0 : 1;
 	}
+
+	public double getScore() {
+		return score;
+	}
+
+	public void setScore(double score) {
+		this.score = score;
+	}
+	
 }

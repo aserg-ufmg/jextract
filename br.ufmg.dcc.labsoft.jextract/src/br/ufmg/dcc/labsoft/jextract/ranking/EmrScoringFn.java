@@ -42,6 +42,13 @@ public enum EmrScoringFn {
 	KUL_TM,
 	KUL_TVM,
 
+	X_KUL_TVM {
+		@Override
+		public double score(ExtractMethodRecomendation rec) {
+			return rec.getScore();
+		}
+	},
+	
 	SS2_T,
 	SS2_V,
 	SS2_M,

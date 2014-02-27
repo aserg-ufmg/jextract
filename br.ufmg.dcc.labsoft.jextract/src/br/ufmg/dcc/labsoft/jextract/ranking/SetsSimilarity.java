@@ -29,12 +29,13 @@ public class SetsSimilarity {
 		set2.add(item);
 	}
 
-	public void end() {
+	public SetsSimilarity end() {
 		for (String elem : set2) {
 			if (set1.contains(elem)) {
 				intersection.add(elem);
 			}
 		}
+		return this;
 	}
 
 	public int getA() {

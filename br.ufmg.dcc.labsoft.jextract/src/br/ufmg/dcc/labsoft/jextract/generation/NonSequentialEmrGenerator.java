@@ -4,13 +4,21 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Statement;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
+import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
+import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
+import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 
@@ -83,10 +91,11 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		
 		if (!frags.isEmpty()) {
 			Fragment[] fragmentsArray = frags.toArray(new Fragment[frags.size()]);
-			this.addRecomendation(model, totalSize, fragmentsArray);
+			double score = this.computeScore(model, block, selected, totalSize, fragmentsArray);
+			this.addRecomendation(model, totalSize, score, fragmentsArray);
 		}
     }
-	
+
 	private static class StatementSelection {
 		BitSet selected;
 		int totalSize;
@@ -112,4 +121,72 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		}
 	}
 
+	protected double computeScore(MethodModel model, BlockModel block, StatementSelection selected, int totalSize, Fragment[] fragmentsArray) {
+		final ExtractionSlice slice = new ExtractionSlice(fragmentsArray);
+		final SetsSimilarity ssim = new SetsSimilarity();
+		
+		final EntitySet entitiesP1 = new EntitySet();
+		final EntitySet entitiesP2 = new EntitySet();
+		final EntitySet entitiesT1 = new EntitySet();
+		final EntitySet entitiesT2 = new EntitySet();
+		final EntitySet entitiesV1 = new EntitySet();
+		final EntitySet entitiesV2 = new EntitySet();
+		
+		model.getAstNode().accept(new DependenciesAstVisitor(model.getAstNode().resolveBinding().getDeclaringClass()) {
+			@Override
+			public void onModuleAccess(ASTNode node, String packageName) {
+				if (slice.belongsToMethod(node.getStartPosition())) {
+					entitiesP1.add(packageName);
+				}
+				if (slice.belongsToExtracted(node.getStartPosition())) {
+					entitiesP2.add(packageName);
+				}
+			}
+			@Override
+			public void onTypeAccess(ASTNode node, ITypeBinding binding) {
+				if (slice.belongsToMethod(node.getStartPosition())) {
+					entitiesT1.add(binding.getKey());
+				}
+				if (slice.belongsToExtracted(node.getStartPosition())) {
+					entitiesT2.add(binding.getKey());
+				}
+			}
+			@Override
+			public void onVariableAccess(ASTNode node, IVariableBinding binding) {
+				if (slice.belongsToMethod(node.getStartPosition())) {
+					entitiesV1.add(binding.getKey());
+				}
+				if (slice.belongsToExtracted(node.getStartPosition())) {
+					entitiesV2.add(binding.getKey());
+				}
+			}
+		});
+		ssim.end();
+		
+		double distance = (this.dist(entitiesP1, entitiesP2) + this.dist(entitiesT1, entitiesT2) + this.dist(entitiesV1, entitiesV2)) / 3.0;
+
+		List<? extends StatementModel> children = block.getChildren();
+		double meanSim = 0.0;
+		int count = 0;
+		for (int i = 0; i < children.size(); i++) {
+			if (selected.isSelected(i)) {
+				StatementModel s = children.get(i);
+				meanSim += this.sim(s.getEntitiesP(), entitiesP2) + this.sim(s.getEntitiesT(), entitiesT2) + this.sim(s.getEntitiesV(), entitiesV2);
+				count++;
+			}
+		}
+		if (meanSim > 0.0) {
+			meanSim = meanSim / count;
+		}
+		
+		return distance * meanSim;
+	}
+
+	private double dist(EntitySet entitiesT1, EntitySet entitiesT2) {
+		return new SetsSimilarity(entitiesT1, entitiesT2).end().dist(Coefficient.KUL);
+	}
+
+	private double sim(EntitySet entitiesT1, EntitySet entitiesT2) {
+		return new SetsSimilarity(entitiesT1, entitiesT2).end().sim(Coefficient.KUL);
+	}
 }

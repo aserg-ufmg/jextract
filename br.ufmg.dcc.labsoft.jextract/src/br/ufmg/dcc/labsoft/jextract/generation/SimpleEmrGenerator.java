@@ -2,18 +2,9 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 import gr.uom.java.ast.ASTInformationGenerator;
 import gr.uom.java.ast.CompilationUnitCache;
-import gr.uom.java.ast.MethodObject;
-import gr.uom.java.ast.decomposition.cfg.CFG;
-import gr.uom.java.ast.decomposition.graph.GraphEdge;
-import gr.uom.java.ast.decomposition.graph.GraphNode;
-import gr.uom.java.ast.decomposition.pdg.PDG;
-import gr.uom.java.ast.decomposition.pdg.PDGDependence;
-import gr.uom.java.ast.decomposition.pdg.PDGNode;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -25,21 +16,28 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 import br.ufmg.dcc.labsoft.jextract.model.impl.MethodModelBuilder;
+import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
+import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
+import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class SimpleEmrGenerator {
@@ -132,10 +130,10 @@ public class SimpleEmrGenerator {
 		int start = block.get(first).getAstNode().getStartPosition();
 		Statement lastStatementAstNode = block.get(last).getAstNode();
 		int end = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength();
-		this.addRecomendation(model, totalSize, new Fragment(start, end, false));
+		this.addRecomendation(model, totalSize, 0.0, new Fragment(start, end, false));
 	}
 
-	protected void addRecomendation(MethodModel model, int totalSize, Fragment ... fragments) {
+	protected void addRecomendation(MethodModel model, int totalSize, double score, Fragment ... fragments) {
 		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
 				model.getDeclaringType(), model.getMethodSignature(), new ExtractionSlice(fragments));
 
@@ -146,6 +144,8 @@ public class SimpleEmrGenerator {
 
 		recomendation.setOk(true);
 
+		recomendation.setScore(score);
+		
 		this.recomendationsForMethod.add(recomendation);
     }
 

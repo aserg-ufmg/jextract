@@ -3,6 +3,7 @@ package br.ufmg.dcc.labsoft.jextract.model;
 import java.util.List;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 public interface MethodModel {
 
@@ -15,5 +16,7 @@ public interface MethodModel {
 	String getDeclaringType();
 
 	ICompilationUnit getCompilationUnit();
+
+	MethodDeclaration getAstNode();
 
 }

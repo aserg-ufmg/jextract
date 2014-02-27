@@ -31,7 +31,7 @@ public class EmrRecommender {
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
 		List<ExtractMethodRecomendation> result = new ArrayList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
-		Utils.sort(recomendations, EmrScoringFn.KUL_TVM, false);
+		Utils.sort(recomendations, EmrScoringFn.X_KUL_TVM, false);
 		int i = 0;
 		String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
 		System.out.print(id + ": ");

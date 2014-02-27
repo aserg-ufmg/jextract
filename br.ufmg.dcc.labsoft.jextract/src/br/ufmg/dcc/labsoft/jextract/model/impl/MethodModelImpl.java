@@ -13,11 +13,13 @@ class MethodModelImpl implements MethodModel {
 
 	private final ICompilationUnit compilationUnit;
 	private final IMethodBinding methodBinding;
+	private final MethodDeclaration astNode;
 	//private final EmrStatement[] statements;
 	private final BlockImpl[] blocks;
 
     public MethodModelImpl(ICompilationUnit src, MethodDeclaration methodDeclaration, BlockImpl[] blocks) {
-	    this.compilationUnit = src;
+    	this.compilationUnit = src;
+	    this.astNode = methodDeclaration;
 	    this.methodBinding = methodDeclaration.resolveBinding();
 	    //this.statements = statements;
 	    this.blocks = blocks;
@@ -49,6 +51,11 @@ class MethodModelImpl implements MethodModel {
     @Override
 	public ICompilationUnit getCompilationUnit() {
 		return this.compilationUnit;
+	}
+
+    @Override
+	public MethodDeclaration getAstNode() {
+		return this.astNode;
 	}
 
 }
