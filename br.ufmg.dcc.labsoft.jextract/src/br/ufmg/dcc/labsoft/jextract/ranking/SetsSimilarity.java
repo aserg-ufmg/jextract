@@ -51,12 +51,15 @@ public class SetsSimilarity {
 	}
 	
 	public double sim(Coefficient coefficient) {
-		if (this.getA() == 0) {
-			return 0.0;
-		}
 		double a = this.getA();
 		double b = this.getB();
 		double c = this.getC();
+//		if ((a + b + c) == 0) {
+//			return 1.0;
+//		}
+		if (a == 0) {
+			return 0.0;
+		}
 		return coefficient.formula(a, b, c);
 	}
 

@@ -25,6 +25,7 @@ public class ExtractMethodRecomendation {
 	private boolean similar = false;
 	private boolean availableInGoldSet = false;
 	private double score = 0.0;
+	private String explanation = "";
 
 	public ExtractMethodRecomendation(int id, String className, String method, ExtractionSlice slice) {
 		this.id = id;
@@ -87,7 +88,14 @@ public class ExtractMethodRecomendation {
 		this.ssimM = ssimM;
 	}
 
+	public void setExplanation(String explanation) {
+		this.explanation = explanation;
+	}
+
 	public String getExplanation() {
+		if (this.explanation != null) {
+			return this.explanation;
+		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("Typ(a=%d, b=%d, c=%d)", this.ssimT.getA(), this.ssimT.getB(), this.ssimT.getC()));
 		sb.append(" | ");
@@ -222,5 +230,5 @@ public class ExtractMethodRecomendation {
 	public void setScore(double score) {
 		this.score = score;
 	}
-	
+
 }

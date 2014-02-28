@@ -1,5 +1,8 @@
 package br.ufmg.dcc.labsoft.jextract.model.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Statement;
 
@@ -21,6 +24,7 @@ class StatementImpl implements StatementModel {
 	Statement astNode = null;
 	BlockModel parentBlock = null;
 	Pdg pdg = null;
+	private final List<StatementImpl> children = new ArrayList<StatementImpl>();
 
 	private final EntitySet entitiesP = new EntitySet();
 	private final EntitySet entitiesT = new EntitySet();
@@ -29,6 +33,8 @@ class StatementImpl implements StatementModel {
 	private static final StatementImpl NIL = new StatementImpl(){
 		@Override
 		void registerAsChild(StatementImpl child) {};
+		@Override
+		void increaseSize(int size) {};
 	};
 
 	private StatementImpl() {
@@ -50,8 +56,27 @@ class StatementImpl implements StatementModel {
 	}
 
 	void registerAsChild(StatementImpl child) {
-		this.childrenSize += child.getTotalSize();
-		this.parent.registerAsChild(child);
+		this.children.add(child);
+		this.increaseSize(child.getTotalSize());
+	}
+
+	@Override
+	public List<? extends StatementModel> getDescendents() {
+		ArrayList<StatementImpl> result = new ArrayList<StatementImpl>();
+		this.fillDescendentsRecursive(result);
+		return result;
+	}
+	
+	private void fillDescendentsRecursive(List<StatementImpl> list) {
+		for (StatementImpl child : this.children) {
+			list.add(child);
+			child.fillDescendentsRecursive(list);
+		}
+	}
+	
+	void increaseSize(int size) {
+		this.childrenSize += size;
+		this.parent.increaseSize(size);
 	}
 
 	@Override
@@ -95,14 +120,17 @@ class StatementImpl implements StatementModel {
 		this.parentBlock = parentBlock;
 	}
 
+	@Override
 	public EntitySet getEntitiesP() {
 		return entitiesP;
 	}
 
+	@Override
 	public EntitySet getEntitiesT() {
 		return entitiesT;
 	}
 
+	@Override
 	public EntitySet getEntitiesV() {
 		return entitiesV;
 	}

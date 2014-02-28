@@ -14,7 +14,6 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 
-import br.ufmg.dcc.labsoft.jextract.model.HasEntityDependencies;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
@@ -80,19 +79,27 @@ public class MethodModelBuilder extends ASTVisitor {
 		}
 	}
 
-	private void fillEntities(ASTNode stmNode, final HasEntityDependencies thisStatement) {
-	    stmNode.accept(new DependenciesAstVisitor(this.methodDeclaration.resolveBinding().getDeclaringClass()) {
+	private void fillEntities(final ASTNode stmNode, final StatementImpl thisStatement) {
+		stmNode.accept(new DependenciesAstVisitor(this.methodDeclaration.resolveBinding().getDeclaringClass()) {
 	    	@Override
 	    	public void onModuleAccess(ASTNode node, String packageName) {
-	    		thisStatement.getEntitiesP().add(packageName);
+    			thisStatement.getEntitiesP().add(packageName);
 	    	}
 	    	@Override
 	    	public void onTypeAccess(ASTNode node, ITypeBinding binding) {
-	    		thisStatement.getEntitiesP().add(binding.getKey());
+    			thisStatement.getEntitiesT().add(binding.getKey());
 	    	}
 	    	@Override
 	    	public void onVariableAccess(ASTNode node, IVariableBinding binding) {
-	    		thisStatement.getEntitiesP().add(binding.getKey());
+    			thisStatement.getEntitiesV().add(binding.getKey());
+	    	}
+	    	// Override preVisit2 to avoid visiting children statements.
+	    	@Override
+	    	public boolean preVisit2(ASTNode node) {
+	    		if (node instanceof Statement && node != stmNode) {
+	    			return false;
+	    		}
+	    	    return super.preVisit2(node);
 	    	}
 	    });
     }

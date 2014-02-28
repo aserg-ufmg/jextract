@@ -22,7 +22,7 @@ import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 
-	private final int maxFragments = 2;
+	private final int maxFragments = 1;
 
 	public NonSequentialEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
 		super(recomendations, minSize);
@@ -91,8 +91,8 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		
 		if (!frags.isEmpty()) {
 			Fragment[] fragmentsArray = frags.toArray(new Fragment[frags.size()]);
-			double score = this.computeScore(model, block, selected, totalSize, fragmentsArray);
-			this.addRecomendation(model, totalSize, score, fragmentsArray);
+			ExtractMethodRecomendation rec = this.addRecomendation(model, totalSize, fragmentsArray);
+			this.computeAndSetScore(rec, model, block, selected);
 		}
     }
 
@@ -121,8 +121,8 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		}
 	}
 
-	protected double computeScore(MethodModel model, BlockModel block, StatementSelection selected, int totalSize, Fragment[] fragmentsArray) {
-		final ExtractionSlice slice = new ExtractionSlice(fragmentsArray);
+	protected void computeAndSetScore(ExtractMethodRecomendation rec, MethodModel model, BlockModel block, StatementSelection selected) {
+		final ExtractionSlice slice = rec.getSlice();
 		final SetsSimilarity ssim = new SetsSimilarity();
 		
 		final EntitySet entitiesP1 = new EntitySet();
@@ -163,23 +163,41 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		});
 		ssim.end();
 		
-		double distance = (this.dist(entitiesP1, entitiesP2) + this.dist(entitiesT1, entitiesT2) + this.dist(entitiesV1, entitiesV2)) / 3.0;
+		double distP = this.dist(entitiesP1, entitiesP2);
+		double distT = this.dist(entitiesT1, entitiesT2);
+		double distV = this.dist(entitiesV1, entitiesV2);
+		//double distance = (distP + distT + distV) / 3.0;
 
 		List<? extends StatementModel> children = block.getChildren();
-		double meanSim = 0.0;
+		double meanP = 0.0;
+		double meanT = 0.0;
+		double meanV = 0.0;
 		int count = 0;
 		for (int i = 0; i < children.size(); i++) {
 			if (selected.isSelected(i)) {
 				StatementModel s = children.get(i);
-				meanSim += this.sim(s.getEntitiesP(), entitiesP2) + this.sim(s.getEntitiesT(), entitiesT2) + this.sim(s.getEntitiesV(), entitiesV2);
+				meanP += this.sim(s.getEntitiesP(), entitiesP2);
+				meanT += this.sim(s.getEntitiesT(), entitiesT2);
+				meanV += this.sim(s.getEntitiesV(), entitiesV2);
 				count++;
+				for (StatementModel ds : s.getDescendents()) {
+					meanP += this.sim(ds.getEntitiesP(), entitiesP2);
+					meanT += this.sim(ds.getEntitiesT(), entitiesT2);
+					meanV += this.sim(ds.getEntitiesV(), entitiesV2);
+					count++;
+				}
 			}
 		}
-		if (meanSim > 0.0) {
-			meanSim = meanSim / count;
+		if (count > 0) {
+			meanP = meanP / count;
+			meanT = meanT / count;
+			meanV = meanV / count;
 		}
+		//double mean = (meanP + meanT + meanV) / 3.0;
+		double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
 		
-		return distance * meanSim;
+		rec.setScore(score);
+		rec.setExplanation(String.format("P = %.2f * %.2f, T = %.2f * %.2f, V = %.2f * %.2f", distP, meanP, distT, meanT, distV, meanV));
 	}
 
 	private double dist(EntitySet entitiesT1, EntitySet entitiesT2) {
