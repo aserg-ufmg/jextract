@@ -22,7 +22,8 @@ import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 
-	private final int maxFragments = 1;
+	private final int maxFragments = 2;
+	private final double penalty = 1.0;
 
 	public NonSequentialEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
 		super(recomendations, minSize);
@@ -195,6 +196,11 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		}
 		//double mean = (meanP + meanT + meanV) / 3.0;
 		double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
+		
+		if (slice.isComposed()) {
+			// Penalty for unsafe recommendation
+			score = score * this.penalty;
+		}
 		
 		rec.setScore(score);
 		rec.setExplanation(String.format("P = %.2f * %.2f, T = %.2f * %.2f, V = %.2f * %.2f", distP, meanP, distT, meanT, distV, meanV));

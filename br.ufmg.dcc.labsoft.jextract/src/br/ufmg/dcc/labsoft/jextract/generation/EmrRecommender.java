@@ -1,6 +1,6 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -15,6 +15,7 @@ import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrScoringFn;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 import br.ufmg.dcc.labsoft.jextract.ranking.StatementsSliceCountVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
@@ -29,30 +30,51 @@ public class EmrRecommender {
 	}
 
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
-		List<ExtractMethodRecomendation> result = new ArrayList<ExtractMethodRecomendation>();
+		LinkedList<ExtractMethodRecomendation> result = new LinkedList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
 		Utils.sort(recomendations, EmrScoringFn.X_KUL_TVM, false);
-		int i = 0;
-		String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
-		System.out.print(id + ": ");
 		
-		boolean found = false;
+		ExtractMethodRecomendation bestSafeRec = null;
 		for (ExtractMethodRecomendation recommendation : recomendations) {
-			result.add(recommendation);
-			i++;
-			if (this.goldset != null) {
-				if (this.goldset.contains(recommendation)) {
-					System.out.println(i);
-					found = true;
+			ExtractionSlice slice = recommendation.getSlice();
+			if (!slice.isComposed()) {
+				Fragment frag = slice.getEnclosingFragment();
+				boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
+				if (valid) {
+					bestSafeRec = recommendation;
+					result.add(recommendation);
 					break;
 				}
-			} else if (result.size() >= this.maxPerMethod) {
-				break;
 			}
 		}
 		
-		if (!found) {
-			System.out.println("not found");
+		for (ExtractMethodRecomendation recommendation : recomendations) {
+			ExtractionSlice slice = recommendation.getSlice();
+			Fragment frag = slice.getEnclosingFragment();
+			boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
+			if (valid && recommendation != bestSafeRec) {
+				result.add(recommendation);
+				if (result.size() >= this.maxPerMethod) {
+					break;
+				}
+			}
+		}
+		
+		if (this.goldset != null) {
+			String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
+			System.out.print(id + ": ");
+			boolean found = false;
+			int i = 1;
+			for (ExtractMethodRecomendation rec : result) {
+				if (this.goldset.contains(rec)) {
+					System.out.println(i);
+					found = true;
+				}
+				i++;
+			}
+			if (!found) {
+				System.out.println("not found");
+			}
 		}
 		
 		return result;
