@@ -4,15 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 
 class BlockImpl implements BlockModel {
 
+	private int index;
 	private StatementImpl blockStatement;
 	private List<StatementImpl> children;
 
-	public BlockImpl(StatementImpl blockStatement) {
+	public BlockImpl(int index, StatementImpl blockStatement) {
+		this.index = index;
 		this.blockStatement = blockStatement;
 		this.children = new ArrayList<StatementImpl>();
+	}
+
+	@Override
+	public int getIndex() {
+		return this.index;
 	}
 
 	@Override
@@ -34,6 +42,16 @@ class BlockImpl implements BlockModel {
 	@Override
 	public int getTotalSize() {
 		return this.blockStatement.getTotalSize();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("B" + this.index + ":");
+		for (StatementModel s : this.getChildren()) {
+			sb.append("\n" + s.toString());
+		}
+	    return sb.toString();
 	}
 
 }

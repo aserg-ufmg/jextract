@@ -7,6 +7,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
+import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 
 class MethodModelImpl implements MethodModel {
@@ -58,4 +59,12 @@ class MethodModelImpl implements MethodModel {
 		return this.astNode;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (BlockModel b : this.blocks) {
+			sb.append(b.toString() + "\n");
+		}
+	    return sb.toString();
+	}
 }

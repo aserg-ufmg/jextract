@@ -135,4 +135,18 @@ class StatementImpl implements StatementModel {
 		return entitiesV;
 	}
 
+	@Override
+	public String toString() {
+	    String src = this.astNode.toString();
+	    if (src.indexOf('\n') == -1) {
+	    	return src;
+	    }
+		String firstLine = src.substring(0, src.indexOf('\n'));
+		if (src.length() > firstLine.length() + 1) {
+			return firstLine + " ...";
+		} else {
+			return firstLine;
+		}
+	}
+
 }

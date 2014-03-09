@@ -8,10 +8,13 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BreakStatement;
+import org.eclipse.jdt.core.dom.ContinueStatement;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.SwitchCase;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
@@ -70,7 +73,16 @@ public class MethodModelBuilder extends ASTVisitor {
 				// Creates a block with all children.
 				createBlock(thisStatement, ((Block) node).statements());
 			} else if (node instanceof SwitchStatement) {
-				createBlock(thisStatement, ((SwitchStatement) node).statements());
+				@SuppressWarnings("unchecked")
+                List<Statement> children = ((SwitchStatement) node).statements();
+				for (int i = 0, length = children.size(); i < length;) {
+					for (; i < length && children.get(i) instanceof SwitchCase; i++);
+					List<Statement> statementsOfSwitchCase = new ArrayList<Statement>();
+					for (; i < length && !(children.get(i) instanceof SwitchCase); i++) {
+						statementsOfSwitchCase.add(children.get(i));
+					}
+					createBlock(thisStatement, statementsOfSwitchCase);
+				}
 			} else if (!thisStatement.isBlock() && !thisStatement.parent.isBlock()) {
 				// Creates a block with a single statement.
 				createVirtualBlock(thisStatement);
@@ -105,16 +117,19 @@ public class MethodModelBuilder extends ASTVisitor {
     }
 
 	private void createBlock(StatementImpl thisStatement, @SuppressWarnings("rawtypes") List statements) {
-		BlockImpl emrBlock = new BlockImpl(thisStatement);
+		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement);
 		for (Object stm : statements) {
-			StatementImpl statement = this.statementsMap.get(stm);
-			emrBlock.appendStatement(statement);
+			boolean isBreakOrContinue = stm instanceof BreakStatement || stm instanceof ContinueStatement;
+			if (!isBreakOrContinue) {
+				StatementImpl statement = this.statementsMap.get(stm);
+				emrBlock.appendStatement(statement);
+			}
 		}
 		this.blocks.add(emrBlock);
 	}
 
 	private void createVirtualBlock(StatementImpl thisStatement) {
-		BlockImpl emrBlock = new BlockImpl(thisStatement);
+		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement);
 		emrBlock.appendStatement(thisStatement);
 		this.blocks.add(emrBlock);
 	}
