@@ -65,10 +65,15 @@ public class MethodObject implements AbstractMethodDeclaration {
 			}
 		}*/
 		Type returnType = methodDeclaration.getReturnType2();
-		ITypeBinding binding = returnType.resolveBinding();
-		String qualifiedName = binding.getQualifiedName();
-		TypeObject typeObject = TypeObject.extractTypeObject(qualifiedName);
-		this.setReturnType(typeObject);
+		if (returnType != null) {
+			ITypeBinding binding = returnType.resolveBinding();
+			String qualifiedName = binding.getQualifiedName();
+			this.setReturnType(TypeObject.extractTypeObject(qualifiedName));
+		} else {
+			// getReturnType2 is null for constructors
+			String qualifiedName = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName();
+			this.setReturnType(TypeObject.extractTypeObject(qualifiedName));
+		}
 		
 		int methodModifiers = methodDeclaration.getModifiers();
 		if((methodModifiers & Modifier.ABSTRACT) != 0)
