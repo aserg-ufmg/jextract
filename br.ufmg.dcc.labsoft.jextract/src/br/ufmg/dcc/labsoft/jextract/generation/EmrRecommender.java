@@ -23,7 +23,11 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 public class EmrRecommender {
 
 	private ProjectRelevantSet goldset = null;
-	private int maxPerMethod = 3;
+	private final Settings settings;
+
+    public EmrRecommender(Settings settings) {
+	    this.settings = settings;
+    }
 
 	public void setGoldset(ProjectRelevantSet goldset) {
 		this.goldset = goldset;
@@ -54,7 +58,7 @@ public class EmrRecommender {
 			boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
 			if (valid && recommendation != bestSafeRec) {
 				result.add(recommendation);
-				if (result.size() >= this.maxPerMethod) {
+				if (result.size() >= this.settings.getMaxPerMethod()) {
 					break;
 				}
 			}

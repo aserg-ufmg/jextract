@@ -12,14 +12,18 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
+
 public class EmrSettingsDialog extends Dialog {
 	private Text txtMinSize;
-	private Text txtMaxRatio;
-	private Integer minSize = 3;
-	//private Double maxRatio = 0.8;
+	private Text txtMaxPerMethod;
+	private Text txtMaxFragments;
+	private Text txtPenalty;
+	private final Settings settings;
 
 	public EmrSettingsDialog(Shell parentShell) {
 		super(parentShell);
+		this.settings = new Settings();
 	}
 
 	@Override
@@ -30,27 +34,23 @@ public class EmrSettingsDialog extends Dialog {
 		layout.marginLeft = 10;
 		container.setLayout(layout);
 
-		Label lblUser = new Label(container, SWT.NONE);
-		lblUser.setText("Minimum extracted statements:");
-
-		txtMinSize = new Text(container, SWT.BORDER);
-		txtMinSize.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-				false, 1, 1));
-		txtMinSize.setText(minSize.toString());
-
-//		Label lblPassword = new Label(container, SWT.NONE);
-//		GridData gd_lblNewLabel = new GridData(SWT.LEFT, SWT.CENTER, false,
-//				false, 1, 1);
-//		gd_lblNewLabel.horizontalIndent = 1;
-//		lblPassword.setLayoutData(gd_lblNewLabel);
-//		lblPassword.setText("Maximum extracted/total ratio :");
-//
-//		txtMaxRatio = new Text(container, SWT.BORDER);
-//		txtMaxRatio.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-//				false, 1, 1));
-//		txtMaxRatio.setText(maxRatio.toString());
+		this.txtMinSize = this.createTextField(container, "Minimum extracted statements:", this.settings.getMinSize().toString());
+		this.txtMaxPerMethod = this.createTextField(container, "Maximum recommendations per method:", this.settings.getMaxPerMethod().toString());
+		this.txtMaxFragments = this.createTextField(container, "Maximum extraction fragments:", this.settings.getMaxFragments().toString());
+		this.txtPenalty = this.createTextField(container, "Statement reordering penalty:", this.settings.getPenalty().toString());
+		
 		return container;
 	}
+
+	private Text createTextField(Composite container, String label, String initialValue) {
+	    Label labelWidget = new Label(container, SWT.NONE);
+		labelWidget.setText(label);
+
+		Text textField = new Text(container, SWT.BORDER);
+		textField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		textField.setText(initialValue);
+		return textField;
+    }
 
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
@@ -68,7 +68,10 @@ public class EmrSettingsDialog extends Dialog {
 	@Override
 	protected void okPressed() {
 		try {
-			minSize = Integer.valueOf(txtMinSize.getText());
+			this.settings.setMinSize(Integer.valueOf(txtMinSize.getText()));
+			this.settings.setMaxPerMethod(Integer.valueOf(txtMaxPerMethod.getText()));
+			this.settings.setMaxFragments(Integer.valueOf(txtMaxFragments.getText()));
+			this.settings.setPenalty(Double.valueOf(txtPenalty.getText()));
 		} catch (NumberFormatException e) {}
 //		try {
 //			maxRatio = Double.valueOf(txtMaxRatio.getText());
@@ -76,24 +79,8 @@ public class EmrSettingsDialog extends Dialog {
 		super.okPressed();
 	}
 
-	public Integer getMinSize() {
-		return minSize;
-	}
-
-//	public int getFirstK() {
-//		return 3;
-//	}
-
-	public void setMinSize(Integer minSize) {
-		this.minSize = minSize;
-	}
-
-//	public Double getMaxRatio() {
-//		return maxRatio;
-//	}
-//
-//	public void setMaxRatio(Double maxRatio) {
-//		this.maxRatio = maxRatio;
-//	}
+	public Settings getSettings() {
+	    return this.settings;
+    }
 
 }

@@ -15,6 +15,7 @@ import org.eclipse.ui.PlatformUI;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.generation.NonSequentialEmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.generation.SimpleEmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
@@ -95,12 +96,12 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	private List<ExtractMethodRecomendation> findEmr(IProject project, ProjectRelevantSet goldset) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
-			Integer minSize = dialog.getMinSize();
+			Settings settings = dialog.getSettings();
 			// int k = dialog.getFirstK();
 
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			//SimpleEmrGenerator analyser = new SimpleEmrGenerator(recomendations, minSize);
-			SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, minSize);
+			SimpleEmrGenerator analyser = new NonSequentialEmrGenerator(recomendations, settings);
 			analyser.setGoldset(goldset);
 			analyser.generateRecomendations(project);
 

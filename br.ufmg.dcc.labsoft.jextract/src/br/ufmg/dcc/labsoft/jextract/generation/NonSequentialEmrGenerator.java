@@ -22,53 +22,77 @@ import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 
 public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 
-	private final int maxFragments = 2;
-	private final double penalty = 1.0;
-
-	public NonSequentialEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
-		super(recomendations, minSize);
+	private int recursiveCalls = 0;
+	private MethodModel model;
+	
+	private BlockModel block;
+	private StatementSelection selected;
+	
+	public NonSequentialEmrGenerator(List<ExtractMethodRecomendation> recomendations, Settings settings) {
+		super(recomendations, settings);
 	}
 
 	@Override
-	protected void forEachSlice(MethodModel model) {
-		//int methodSize = model.getTotalSize();
-		for (BlockModel block: model.getBlocks()) {
-			StatementSelection selected = new StatementSelection(block);
-			this.select(model, block, selected, 0, false, 0);
+	protected void forEachSlice(MethodModel m) {
+		this.recursiveCalls = 0;
+		this.model = m;
+		for (BlockModel b: m.getBlocks()) {
+			this.block = b;
+			this.selected = new StatementSelection(b);
+			this.init(0);
 		}
+		//System.out.println("cost: " + this.recursiveCalls);
 	}
 
-	private void select(MethodModel model, BlockModel block, StatementSelection selected, int i, boolean lastSelected, int fragments) {
-	    if (i >= block.getChildren().size()) {
-	    	if (selected.getTotalSize() >= this.minSize) {
-	    		this.handleSlice(model, block, selected);
-	    	}
-	    } else {
-	    	if (this.canSelect(model, block, selected, i, true, true, lastSelected ? fragments : fragments + 1)) {
-	    		selected.select(i);
-	    		this.select(model, block, selected, i + 1, true, lastSelected ? fragments : fragments + 1);
-	    		selected.unselect(i);
-	    	}
-	    	if (this.canSelect(model, block, selected, i, false, false, fragments)) {
-	    		this.select(model, block, selected, i + 1, false, fragments);
-	    	}
-	    }
-    }
-
-	private boolean canSelect(MethodModel model, BlockModel block, StatementSelection selected, int i, boolean b, boolean lastSelected, int fragments) {
-		if (b) {
-			if (fragments > this.maxFragments) {
-				return false;
-			}
-			int newSize = selected.getTotalSize() + block.get(i).getTotalSize();
-			if ((model.getTotalSize() - newSize) < this.minSize) {
-				return false;
-			}
+	private void init(int i) {
+		if (!this.checkBounds(i)) {
+			return;
 		}
-		// TODO
-	    return true;
+		
+		init(i + 1);
+		extract(i, 1);
     }
+	private void extract(int i, int fragments) {
+		if (!this.checkBounds(i)) {
+			return;
+		}
+		try {
+			this.selected.select(i);
+			
+			if ((this.model.getTotalSize() - this.selected.getTotalSize()) < this.settings.getMinSize()) {
+				return;
+			}
+			
+			extract(i + 1, fragments);
+			end();
+			skip(i + 1, fragments + 1);
+		} finally {
+			this.selected.unselect(i);
+		}
+	}
+	private void skip(int i, int fragments) {
+		if (!this.checkBounds(i) || fragments > this.settings.getMaxFragments()) {
+			return;
+		}
+		
+		skip(i + 1, fragments);
+		extract(i + 1, fragments);
+	}
+	private void end() {
+		if (selected.getTotalSize() < this.settings.getMinSize()) {
+			return;
+    	}
+		this.handleSlice(model, block, selected);
+	}
 
+	private boolean checkBounds(int i) {
+		this.recursiveCalls++;
+		if (i >= block.getChildren().size()) {
+			return false;
+		}
+		return true;
+	}
+	
 	private void handleSlice(MethodModel model, BlockModel block, StatementSelection selected) {
 		List<? extends StatementModel> children = block.getChildren();
 		List<Fragment> frags = new ArrayList<Fragment>();
@@ -194,16 +218,17 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 			meanT = meanT / count;
 			meanV = meanV / count;
 		}
-		//double mean = (meanP + meanT + meanV) / 3.0;
-		double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
+		double score = (distP + distT + distV) / 3.0;
+		//double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
 		
 		if (slice.isComposed()) {
 			// Penalty for unsafe recommendation
-			score = score * this.penalty;
+			score = score - (score * this.settings.getPenalty());
 		}
 		
 		rec.setScore(score);
-		rec.setExplanation(String.format("P = %.2f * %.2f, T = %.2f * %.2f, V = %.2f * %.2f", distP, meanP, distT, meanT, distV, meanV));
+		rec.setExplanation(String.format("P = %.2f, T = %.2f, V = %.2f", distP, distT, distV));
+		//rec.setExplanation(String.format("P = %.2f * %.2f, T = %.2f * %.2f, V = %.2f * %.2f", distP, meanP, distT, meanT, distV, meanV));
 	}
 
 	private double dist(EntitySet entitiesT1, EntitySet entitiesT2) {

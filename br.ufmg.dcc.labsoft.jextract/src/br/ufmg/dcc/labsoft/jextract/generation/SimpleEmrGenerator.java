@@ -35,17 +35,16 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class SimpleEmrGenerator {
 
+	protected final Settings settings;
 	private final List<ExtractMethodRecomendation> recomendations;
 	private List<ExtractMethodRecomendation> recomendationsForMethod;
-	protected final int minSize;
 	private EmrRecommender recommender;
 	private ProjectRelevantSet goldset = null;
 
-	public SimpleEmrGenerator(List<ExtractMethodRecomendation> recomendations, int minSize) {
-		super();
+	public SimpleEmrGenerator(List<ExtractMethodRecomendation> recomendations, Settings settings) {
+		this.settings = settings;
 		this.recomendations = recomendations;
-		this.minSize = minSize;
-		this.recommender = new EmrRecommender();
+		this.recommender = new EmrRecommender(settings);
 	}
 
 	public void setGoldset(ProjectRelevantSet goldset) {
@@ -96,15 +95,16 @@ public class SimpleEmrGenerator {
 
 	protected void forEachSlice(MethodModel model) {
 		int methodSize = model.getTotalSize();
+		int minSize = this.settings.getMinSize();
 		for (BlockModel block: model.getBlocks()) {
 			List<? extends StatementModel> children = block.getChildren();
 			for (int last = children.size() - 1; last >= 0; last--) {
 				int sliceSize = 0;
 				for (int first = last; first >= 0; first--) {
 					sliceSize += children.get(first).getTotalSize();
-					if (sliceSize >= this.minSize) {
+					if (sliceSize >= minSize) {
 						int remaining = methodSize - sliceSize;
-						if (remaining >= this.minSize) {
+						if (remaining >= minSize) {
 							int start = block.get(first).getAstNode().getStartPosition();
 							StatementModel lastStatement = block.get(last);
 							Statement lastStatementAstNode = lastStatement.getAstNode();
@@ -142,27 +142,6 @@ public class SimpleEmrGenerator {
     }
 
 	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
-		//this is the code that generates the control flow graph and program dependence graph of the method
-		/*
-		MethodObject methodObject = new MethodObject(methodDeclaration);
-		CFG cfg = new CFG(methodObject);
-		PDG pdg = new PDG(cfg);
-		//from the pdg we can get the nodes and for each node the incoming and outgoing dependencies
-		Set<GraphNode> nodes = pdg.getNodes();
-		for(GraphNode node : nodes) {
-			PDGNode pdgNode = (PDGNode)node;
-			Iterator<GraphEdge> incomingDeps = pdgNode.getIncomingDependenceIterator();
-			while(incomingDeps.hasNext()) {
-				PDGDependence dep = (PDGDependence)incomingDeps.next();
-				System.out.println(dep);
-			}
-			Iterator<GraphEdge> outgoingDeps = pdgNode.getOutgoingDependenceIterator();
-			while(outgoingDeps.hasNext()) {
-				PDGDependence dep = (PDGDependence)outgoingDeps.next();
-				System.out.println(dep);
-			}
-		}
-		*/
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
@@ -184,7 +163,6 @@ public class SimpleEmrGenerator {
 		long time2 = System.currentTimeMillis();
 		this.recomendations.addAll(this.recommender.rankAndFilterForMethod(src, methodDeclaration, this.recomendationsForMethod));
 		//System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
-		
 	}
 
 }
