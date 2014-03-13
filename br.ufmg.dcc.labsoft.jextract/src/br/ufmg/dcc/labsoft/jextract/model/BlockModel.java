@@ -12,4 +12,11 @@ public interface BlockModel {
 
 	int getTotalSize();
 
+	/**
+	 * @param i Index of statement i in the block.
+	 * @param j Index of statement j in the block.
+	 * @return Returns true if statement i depends on statement j.
+	 */
+	boolean depends(int i, int j);
+
 }

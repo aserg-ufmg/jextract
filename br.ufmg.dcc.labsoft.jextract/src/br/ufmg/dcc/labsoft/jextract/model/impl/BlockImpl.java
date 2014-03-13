@@ -11,11 +11,13 @@ class BlockImpl implements BlockModel {
 	private int index;
 	private StatementImpl blockStatement;
 	private List<StatementImpl> children;
+	private final BlockBasedPdg dependencyMatrix;
 
-	public BlockImpl(int index, StatementImpl blockStatement) {
+	public BlockImpl(int index, StatementImpl blockStatement, BlockBasedPdg dependencyMatrix) {
 		this.index = index;
 		this.blockStatement = blockStatement;
 		this.children = new ArrayList<StatementImpl>();
+		this.dependencyMatrix = dependencyMatrix;
 	}
 
 	@Override
@@ -53,5 +55,13 @@ class BlockImpl implements BlockModel {
 		}
 	    return sb.toString();
 	}
+
+	@Override
+    public boolean depends(int i, int j) {
+	    if (this.dependencyMatrix != null) {
+	    	return this.dependencyMatrix.depends(this.index, i, j);
+	    }
+	    return false;
+    }
 
 }

@@ -15,7 +15,5 @@ public interface StatementModel extends HasEntityDependencies {
 
 	Statement getAstNode();
 
-	DependencyRelationship getRelationship(StatementModel other);
-	
 	List<? extends StatementModel> getDescendents();
 }

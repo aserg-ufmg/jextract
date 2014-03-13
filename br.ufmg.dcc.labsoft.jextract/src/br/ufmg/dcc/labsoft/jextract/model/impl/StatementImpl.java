@@ -7,7 +7,6 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Statement;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
-import br.ufmg.dcc.labsoft.jextract.model.DependencyRelationship;
 import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 
@@ -23,7 +22,6 @@ class StatementImpl implements StatementModel {
 	MethodModelImpl methodModel;
 	Statement astNode = null;
 	BlockModel parentBlock = null;
-	Pdg pdg = null;
 	private final List<StatementImpl> children = new ArrayList<StatementImpl>();
 
 	private final EntitySet entitiesP = new EntitySet();
@@ -44,7 +42,7 @@ class StatementImpl implements StatementModel {
 		this.parent = this;
 	}
 
-	StatementImpl(int index, Statement astNode, StatementImpl parent, boolean block, Pdg pdg) {
+	StatementImpl(int index, Statement astNode, StatementImpl parent, boolean block) {
 		this.index = index;
 		this.selfSize = astNode instanceof Block ? 0 : 1;
 		this.childrenSize = 0;
@@ -52,7 +50,6 @@ class StatementImpl implements StatementModel {
 		this.parent.registerAsChild(this);
 		this.block = block;
 		this.astNode = astNode;
-		this.pdg = pdg;
 	}
 
 	void registerAsChild(StatementImpl child) {
@@ -110,11 +107,6 @@ class StatementImpl implements StatementModel {
 	public Statement getAstNode() {
 		return this.astNode;
 	}
-
-	@Override
-    public DependencyRelationship getRelationship(StatementModel other) {
-	    return this.pdg.getRelationship(this, other);
-    }
 
 	public void setParentBlock(BlockModel parentBlock) {
 		this.parentBlock = parentBlock;

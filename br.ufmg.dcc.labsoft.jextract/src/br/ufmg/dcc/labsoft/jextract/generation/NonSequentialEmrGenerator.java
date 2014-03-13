@@ -1,7 +1,7 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
 import java.util.ArrayList;
-import java.util.BitSet;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -52,32 +52,42 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		init(i + 1);
 		extract(i, 1);
     }
+	
 	private void extract(int i, int fragments) {
 		if (!this.checkBounds(i)) {
 			return;
 		}
-		try {
-			this.selected.select(i);
-			
-			if ((this.model.getTotalSize() - this.selected.getTotalSize()) < this.settings.getMinSize()) {
-				return;
-			}
-			
-			extract(i + 1, fragments);
-			end();
-			skip(i + 1, fragments + 1);
-		} finally {
-			this.selected.unselect(i);
+		int newSize = this.selected.getTotalSize() + this.block.get(i).getTotalSize();
+		if ((this.model.getTotalSize() - newSize) < this.settings.getMinSize()) {
+			return;
 		}
+		if (!this.canBePlaced(i, Placement.INSIDE)) {
+			return;
+		}
+		this.selected.set(i, Placement.INSIDE);
+		extract(i + 1, fragments);
+		end();
+		skip(i + 1, fragments + 1);
+		this.selected.set(i, Placement.UNASSIGNED);
 	}
+	
 	private void skip(int i, int fragments) {
 		if (!this.checkBounds(i) || fragments > this.settings.getMaxFragments()) {
+			return;
+		}
+		if (this.canBePlaced(i, Placement.BEFORE)) {
+			this.selected.set(i, Placement.BEFORE);
+		} else if (this.canBePlaced(i, Placement.AFTER)) {
+			this.selected.set(i, Placement.AFTER);
+		} else {
 			return;
 		}
 		
 		skip(i + 1, fragments);
 		extract(i + 1, fragments);
+		this.selected.set(i, Placement.UNASSIGNED);
 	}
+	
 	private void end() {
 		if (selected.getTotalSize() < this.settings.getMinSize()) {
 			return;
@@ -89,6 +99,18 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		this.recursiveCalls++;
 		if (i >= block.getChildren().size()) {
 			return false;
+		}
+		return true;
+	}
+
+	private boolean canBePlaced(int i, Placement placement) {
+		for (int j = i - 1; j >= 0; j--) {
+			// If an statement will be placed before some of its depencies, fail
+			boolean iIsBeforeJ = this.selected.get(j).compareTo(placement) > 0;
+			boolean iDependsOnJ = this.block.depends(i, j);
+			if (iIsBeforeJ && iDependsOnJ) {
+				return false;
+			}
 		}
 		return true;
 	}
@@ -121,25 +143,37 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		}
     }
 
+	static enum Placement {
+		UNASSIGNED,
+		BEFORE,
+		INSIDE,
+		AFTER
+	}
+
 	private static class StatementSelection {
-		BitSet selected;
+		Placement[] selected;
 		int totalSize;
 		private BlockModel block;
 		StatementSelection(BlockModel block) {
 			this.block = block;
-			this.selected = new BitSet(block.getChildren().size());
+			this.selected = new Placement[block.getChildren().size()];
+			Arrays.fill(this.selected, Placement.UNASSIGNED);
 			this.totalSize = 0;
 		}
-		public void select(int index) {
-			this.selected.set(index);
-			this.totalSize += this.block.get(index).getTotalSize();
+		public void set(int index, Placement placement) {
+			if (Placement.INSIDE.equals(placement)) {
+				this.selected[index] = placement;
+				this.totalSize += this.block.get(index).getTotalSize();
+			} else if (this.isSelected(index)) {
+				this.selected[index] = placement;
+				this.totalSize -= this.block.get(index).getTotalSize();
+			}
 		}
-		public void unselect(int index) {
-			this.selected.clear(index);
-			this.totalSize -= this.block.get(index).getTotalSize();
+		public Placement get(int index) {
+			return this.selected[index];
 		}
 		public boolean isSelected(int index) {
-			return this.selected.get(index);
+			return this.get(index).equals(Placement.INSIDE);
 		}
 		public int getTotalSize() {
 			return this.totalSize;

@@ -25,7 +25,7 @@ public class MethodModelBuilder extends ASTVisitor {
 
 	private LinkedHashMap<Object, StatementImpl> statementsMap;
 	private List<BlockImpl> blocks;
-	private Pdg pdg;
+	private BlockBasedPdg pdg;
 	private MethodDeclaration methodDeclaration;
 
 	private MethodModelBuilder() {
@@ -40,7 +40,7 @@ public class MethodModelBuilder extends ASTVisitor {
 		this.methodDeclaration = methodDeclaration;
 		this.statementsMap = new LinkedHashMap<Object, StatementImpl>();
 		this.blocks = new ArrayList<BlockImpl>();
-		this.pdg = new Pdg();
+		this.pdg = new BlockBasedPdg();
 		
 		methodDeclaration.accept(this);
 		
@@ -80,7 +80,7 @@ public class MethodModelBuilder extends ASTVisitor {
 			// O pai direto de um statement pode não ser um statement quando existe inner class na jogada.
 			StatementImpl parent = this.statementsMap.get(Utils.findEnclosingStatement(node1.getParent()));
 			boolean blockLike = node1 instanceof Block || node1 instanceof SwitchStatement;
-			StatementImpl emrStatement = new StatementImpl(this.statementsMap.size(), node1, parent, blockLike, this.pdg);
+			StatementImpl emrStatement = new StatementImpl(this.statementsMap.size(), node1, parent, blockLike);
 			this.statementsMap.put(node1, emrStatement);
 		}
 	}
@@ -138,7 +138,7 @@ public class MethodModelBuilder extends ASTVisitor {
     }
 
 	private void createBlock(StatementImpl thisStatement, @SuppressWarnings("rawtypes") List statements) {
-		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement);
+		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement, this.pdg);
 		for (Object stm : statements) {
 			boolean isBreakOrContinue = stm instanceof BreakStatement || stm instanceof ContinueStatement;
 			if (!isBreakOrContinue) {
@@ -150,7 +150,7 @@ public class MethodModelBuilder extends ASTVisitor {
 	}
 
 	private void createVirtualBlock(StatementImpl thisStatement) {
-		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement);
+		BlockImpl emrBlock = new BlockImpl(this.blocks.size(), thisStatement, this.pdg);
 		emrBlock.appendStatement(thisStatement);
 		this.blocks.add(emrBlock);
 	}
