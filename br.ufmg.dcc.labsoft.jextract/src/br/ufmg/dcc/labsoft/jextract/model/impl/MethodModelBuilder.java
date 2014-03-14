@@ -44,28 +44,7 @@ public class MethodModelBuilder extends ASTVisitor {
 		
 		methodDeclaration.accept(this);
 		
-		// TODO build pdg
-		/*
-		//this is the code that generates the control flow graph and program dependence graph of the method
-		MethodObject methodObject = new MethodObject(methodDeclaration);
-		CFG cfg = new CFG(methodObject);
-		PDG pdg = new PDG(cfg);
-		//from the pdg we can get the nodes and for each node the incoming and outgoing dependencies
-		Set<GraphNode> nodes = pdg.getNodes();
-		for(GraphNode node : nodes) {
-			PDGNode pdgNode = (PDGNode)node;
-			Iterator<GraphEdge> incomingDeps = pdgNode.getIncomingDependenceIterator();
-			while(incomingDeps.hasNext()) {
-				PDGDependence dep = (PDGDependence)incomingDeps.next();
-				//System.out.println(dep);
-			}
-			Iterator<GraphEdge> outgoingDeps = pdgNode.getOutgoingDependenceIterator();
-			while(outgoingDeps.hasNext()) {
-				PDGDependence dep = (PDGDependence)outgoingDeps.next();
-				//System.out.println(dep);
-			}
-		}
-		//*/
+		this.pdg.build(methodDeclaration, this.statementsMap, this.blocks);
 		
 		BlockImpl[] ba = this.blocks.toArray(new BlockImpl[this.blocks.size()]);
 		MethodModelImpl methodModel = new MethodModelImpl(src, methodDeclaration, ba);

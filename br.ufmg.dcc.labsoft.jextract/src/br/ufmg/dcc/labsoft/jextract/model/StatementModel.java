@@ -8,6 +8,8 @@ import org.eclipse.jdt.core.dom.Statement;
 public interface StatementModel extends HasEntityDependencies {
 
 	BlockModel getParentBlock();
+	
+	StatementModel getParentStatement();
 
 	int getIndexInBlock();
 

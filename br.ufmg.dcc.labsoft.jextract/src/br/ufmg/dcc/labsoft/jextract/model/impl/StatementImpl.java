@@ -141,4 +141,8 @@ class StatementImpl implements StatementModel {
 		}
 	}
 
+	public StatementModel getParentStatement() {
+		return this.parent;
+	}
+
 }

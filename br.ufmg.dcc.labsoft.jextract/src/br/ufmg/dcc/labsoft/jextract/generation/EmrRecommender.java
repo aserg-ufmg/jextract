@@ -39,18 +39,18 @@ public class EmrRecommender {
 		Utils.sort(recomendations, EmrScoringFn.X_KUL_TVM, false);
 		
 		ExtractMethodRecomendation bestSafeRec = null;
-		for (ExtractMethodRecomendation recommendation : recomendations) {
-			ExtractionSlice slice = recommendation.getSlice();
-			if (!slice.isComposed()) {
-				Fragment frag = slice.getEnclosingFragment();
-				boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
-				if (valid) {
-					bestSafeRec = recommendation;
-					result.add(recommendation);
-					break;
-				}
-			}
-		}
+//		for (ExtractMethodRecomendation recommendation : recomendations) {
+//			ExtractionSlice slice = recommendation.getSlice();
+//			if (!slice.isComposed()) {
+//				Fragment frag = slice.getEnclosingFragment();
+//				boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
+//				if (valid) {
+//					bestSafeRec = recommendation;
+//					result.add(recommendation);
+//					break;
+//				}
+//			}
+//		}
 		
 		for (ExtractMethodRecomendation recommendation : recomendations) {
 			ExtractionSlice slice = recommendation.getSlice();
