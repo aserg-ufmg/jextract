@@ -1,0 +1,5 @@
+ok classes.SchedulerAction	public java.lang.String schedule() throws java.lang.Exception	job	B1	0/9
+ok classes.SchedulerAction	public java.lang.String schedule() throws java.lang.Exception	sc	B1	0/9 ** duplicated
+wr classes.SchedulerAction	public java.lang.String schedule() throws java.lang.Exception	job	B1	0/8
+ok classes.SchedulerAction	public java.lang.String input() throws java.lang.Exception	job	B1	0/5
+no classes.PurchaseOrderAction	public java.lang.String save() throws java.lang.Exception	item	B1	0/3
