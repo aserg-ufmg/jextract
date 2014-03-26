@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.ReturnStatement;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
@@ -73,6 +74,17 @@ public class BlockBasedPdg {
 //							System.out.println(b);
 						}
 					}	
+				}
+			}
+		}
+		
+		for (int block = 0; block < this.deps.length; block++) {
+			List<? extends StatementModel> children = blocks.get(block).getChildren();
+			int blockDimension = children.size();
+			if (blockDimension > 0 && children.get(blockDimension - 1).getAstNode() instanceof ReturnStatement) {
+				// A return statements is marked as it depends on every statement of the block.
+				for (int j = 0; j < blockDimension - 1; j++) {
+					this.deps[block][blockDimension - 1][j] = true;
 				}
 			}
 		}
