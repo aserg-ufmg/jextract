@@ -48,8 +48,9 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		if (!this.checkBounds(i)) {
 			return;
 		}
-		
+		this.selected.set(i, Placement.BEFORE);
 		init(i + 1);
+		this.selected.set(i, Placement.UNASSIGNED);
 		extract(i, 1);
     }
 	
@@ -144,10 +145,10 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
     }
 
 	static enum Placement {
-		UNASSIGNED,
 		BEFORE,
 		INSIDE,
-		AFTER
+		AFTER,
+		UNASSIGNED
 	}
 
 	private static class StatementSelection {
@@ -167,6 +168,8 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 			} else if (this.isSelected(index)) {
 				this.selected[index] = placement;
 				this.totalSize -= this.block.get(index).getTotalSize();
+			} else {
+				this.selected[index] = placement;
 			}
 		}
 		public Placement get(int index) {
@@ -177,6 +180,21 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		}
 		public int getTotalSize() {
 			return this.totalSize;
+		}
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("B" + this.block.getIndex() + ": [");
+			for (Placement p : this.selected) {
+				switch (p) {
+				case UNASSIGNED: sb.append("-"); break;
+				case BEFORE: sb.append("\u2191"); break;
+				case INSIDE: sb.append("E"); break;
+				case AFTER: sb.append("\u2193"); break;
+				}
+			}
+			sb.append("]");
+			return sb.toString();
 		}
 	}
 
