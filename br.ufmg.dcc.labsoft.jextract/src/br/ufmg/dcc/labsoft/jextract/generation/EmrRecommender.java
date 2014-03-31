@@ -24,13 +24,21 @@ public class EmrRecommender {
 
 	private ProjectRelevantSet goldset = null;
 	private final Settings settings;
-
+	private int[] foundAt;
+	private int[] totalAt;
+	
     public EmrRecommender(Settings settings) {
 	    this.settings = settings;
     }
 
 	public void setGoldset(ProjectRelevantSet goldset) {
 		this.goldset = goldset;
+		this.foundAt = new int[this.settings.getMaxPerMethod()];
+		this.totalAt = new int[this.settings.getMaxPerMethod()];
+		for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
+			this.foundAt[i] = 0;
+			this.totalAt[i] = 0;
+		}
 	}
 
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
@@ -38,29 +46,22 @@ public class EmrRecommender {
 		this.analyseMethod(src, methodDeclaration, recomendations);
 		Utils.sort(recomendations, EmrScoringFn.X_KUL_TVM, false);
 		
-		ExtractMethodRecomendation bestSafeRec = null;
-//		for (ExtractMethodRecomendation recommendation : recomendations) {
-//			ExtractionSlice slice = recommendation.getSlice();
-//			if (!slice.isComposed()) {
-//				Fragment frag = slice.getEnclosingFragment();
-//				boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
-//				if (valid) {
-//					bestSafeRec = recommendation;
-//					result.add(recommendation);
-//					break;
-//				}
-//			}
-//		}
-		
+		final int maxPerMethod = this.settings.getMaxPerMethod();
+		final Double minScore = this.settings.getMinScore();
 		for (ExtractMethodRecomendation recommendation : recomendations) {
 			ExtractionSlice slice = recommendation.getSlice();
+			boolean greaterEqualMinScore = EmrScoringFn.X_KUL_TVM.score(recommendation) >= minScore;
+			if (!greaterEqualMinScore) {
+				continue;
+			}
 			Fragment frag = slice.getEnclosingFragment();
 			boolean valid = slice.isComposed() || Utils.canExtract(src, frag.start, frag.length());
-			if (valid && recommendation != bestSafeRec) {
-				result.add(recommendation);
-				if (result.size() >= this.settings.getMaxPerMethod()) {
-					break;
-				}
+			if (!valid) {
+				continue;
+			}
+			result.add(recommendation);
+			if (result.size() >= maxPerMethod) {
+				break;
 			}
 		}
 		
@@ -68,11 +69,17 @@ public class EmrRecommender {
 			String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
 			System.out.print(id + ": ");
 			boolean found = false;
-			int i = 1;
+			int i = 0;
 			for (ExtractMethodRecomendation rec : result) {
+				for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
+					this.totalAt[j]++;
+				}
 				if (this.goldset.contains(rec)) {
-					System.out.println(i);
+					System.out.println(i + 1);
 					found = true;
+					for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
+						this.foundAt[j]++;
+					}
 				}
 				i++;
 			}
@@ -170,5 +177,24 @@ public class EmrRecommender {
 	        ExtractMethodRecomendation alternative) {
 		return 1.0;
 	}
+
+	public void printReport() {
+	    if (this.goldset != null) {
+	    	System.out.println("----------------------------");
+	    	System.out.print("precision: ");
+	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
+				double precision = ((double) this.foundAt[i]) / this.totalAt[i];
+				System.out.printf("%.3f ", precision);
+			}
+	    	System.out.println();
+	    	System.out.print("recall:    ");
+	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
+	    		double recall = ((double) this.foundAt[i]) / this.goldset.size();
+	    		System.out.printf("%.3f ", recall);
+	    	}
+	    	System.out.println();
+	    	System.out.println("----------------------------");
+	    }
+    }
 
 }

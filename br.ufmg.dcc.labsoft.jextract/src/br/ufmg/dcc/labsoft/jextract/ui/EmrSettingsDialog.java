@@ -19,6 +19,7 @@ public class EmrSettingsDialog extends Dialog {
 	private Text txtMaxPerMethod;
 	private Text txtMaxFragments;
 	private Text txtPenalty;
+	private Text txtMinScore;
 	private final Settings settings;
 
 	public EmrSettingsDialog(Shell parentShell) {
@@ -38,6 +39,7 @@ public class EmrSettingsDialog extends Dialog {
 		this.txtMaxPerMethod = this.createTextField(container, "Maximum recommendations per method:", this.settings.getMaxPerMethod().toString());
 		this.txtMaxFragments = this.createTextField(container, "Maximum extraction fragments:", this.settings.getMaxFragments().toString());
 		this.txtPenalty = this.createTextField(container, "Statement reordering penalty:", this.settings.getPenalty().toString());
+		this.txtMinScore = this.createTextField(container, "Minimum score value:", this.settings.getMinScore().toString());
 		
 		return container;
 	}
@@ -72,6 +74,7 @@ public class EmrSettingsDialog extends Dialog {
 			this.settings.setMaxPerMethod(Integer.valueOf(txtMaxPerMethod.getText()));
 			this.settings.setMaxFragments(Integer.valueOf(txtMaxFragments.getText()));
 			this.settings.setPenalty(Double.valueOf(txtPenalty.getText()));
+			this.settings.setMinScore(Double.valueOf(txtMinScore.getText()));
 		} catch (NumberFormatException e) {}
 //		try {
 //			maxRatio = Double.valueOf(txtMaxRatio.getText());

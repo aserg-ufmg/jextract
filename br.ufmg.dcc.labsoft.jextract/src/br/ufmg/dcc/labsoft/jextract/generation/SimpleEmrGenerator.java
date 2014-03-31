@@ -63,6 +63,7 @@ public class SimpleEmrGenerator {
 				return true;
 			}
 		});
+		this.recommender.printReport();
 	}
 
 	public void generateRecomendations(IMethod method) throws Exception {

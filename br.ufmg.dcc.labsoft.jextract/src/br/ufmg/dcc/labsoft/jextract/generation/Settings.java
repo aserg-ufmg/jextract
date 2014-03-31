@@ -4,8 +4,9 @@ public class Settings {
 
 	private Integer minSize = 3;
 	private Integer maxPerMethod = 3;
-	private Integer maxFragments = 2;
+	private Integer maxFragments = 1;
 	private Double penalty = 0.0;
+	private Double minScore = 0.0;
 
 	public Integer getMinSize() {
 		return minSize;
@@ -39,4 +40,12 @@ public class Settings {
 		this.penalty = penalty;
 	}
 
+	public Double getMinScore() {
+		return this.minScore;
+	}
+
+	public void setMinScore(Double minScore) {
+		this.minScore = minScore;
+	}
+	
 }

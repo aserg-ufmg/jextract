@@ -114,7 +114,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	private void handleTypeBinding(ASTNode node, ITypeBinding typeBinding) {
 		if (typeBinding == null) {
 			StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
-			System.out.println(locationInParent.getId() + " has no type binding");
+			//System.out.println(locationInParent.getId() + " has no type binding");
 		} else {
 			if (!this.ignoreType(typeBinding)) {
 				this.onTypeAccess(node, typeBinding);
@@ -136,7 +136,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	private void handleVariableBinding(ASTNode node, IVariableBinding variableBindig) {
 		if (variableBindig == null) {
 			StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
-			System.out.println(locationInParent.getId() + " has no variable binding");
+			//System.out.println(locationInParent.getId() + " has no variable binding");
 		} else {
 			this.onVariableAccess(node, variableBindig);
 		}
@@ -145,7 +145,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	private void handleFieldBinding(ASTNode node, IVariableBinding variableBindig) {
 		if (variableBindig == null) {
 			StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
-			System.out.println(locationInParent.getId() + " has no variable binding");
+			//System.out.println(locationInParent.getId() + " has no field binding");
 		} else {
 			ITypeBinding declaringClass = variableBindig.getDeclaringClass();
 			if (declaringClass != null && declaringClass.equals(this.myClass)) {
@@ -157,7 +157,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	private void handleMethodBinding(ASTNode node, IMethodBinding methodBinding) {
 		if (methodBinding == null) {
 			StructuralPropertyDescriptor locationInParent = node.getLocationInParent();
-			System.out.println(locationInParent.getId() + " has no method binding");
+			//System.out.println(locationInParent.getId() + " has no method binding");
 		} else {
 			ITypeBinding declaringClass = methodBinding.getDeclaringClass();
 			if (declaringClass != null) {
