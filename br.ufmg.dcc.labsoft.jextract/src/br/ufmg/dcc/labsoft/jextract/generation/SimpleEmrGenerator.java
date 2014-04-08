@@ -124,10 +124,10 @@ public class SimpleEmrGenerator {
 		int start = block.get(first).getAstNode().getStartPosition();
 		Statement lastStatementAstNode = block.get(last).getAstNode();
 		int end = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength();
-		this.addRecomendation(model, totalSize, new Fragment(start, end, false));
+		this.addRecomendation(model, totalSize, 0, new Fragment(start, end, false));
 	}
 
-	protected ExtractMethodRecomendation addRecomendation(MethodModel model, int totalSize, Fragment ... fragments) {
+	protected ExtractMethodRecomendation addRecomendation(MethodModel model, int totalSize, int reorderedSize, Fragment ... fragments) {
 		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
 				model.getDeclaringType(), model.getMethodSignature(), new ExtractionSlice(fragments));
 
@@ -135,6 +135,7 @@ public class SimpleEmrGenerator {
 		recomendation.setExtractedSize(totalSize);
 		recomendation.setSourceFile(model.getCompilationUnit());
 		recomendation.setOriginalSize(model.getTotalSize());
+		recomendation.setReorderedSize(reorderedSize);
 
 		recomendation.setOk(true);
 

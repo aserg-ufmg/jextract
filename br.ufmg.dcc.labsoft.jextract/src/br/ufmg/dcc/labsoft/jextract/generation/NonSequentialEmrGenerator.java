@@ -1,7 +1,6 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -76,10 +75,10 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		if (!this.checkBounds(i) || fragments > this.settings.getMaxFragments()) {
 			return;
 		}
-		if (this.canBePlaced(i, Placement.BEFORE)) {
-			this.selected.set(i, Placement.BEFORE);
-		} else if (this.canBePlaced(i, Placement.AFTER)) {
-			this.selected.set(i, Placement.AFTER);
+		if (this.canBePlaced(i, Placement.MOVED_BEFORE)) {
+			this.selected.set(i, Placement.MOVED_BEFORE);
+		} else if (this.canBePlaced(i, Placement.MOVED_AFTER)) {
+			this.selected.set(i, Placement.MOVED_AFTER);
 		} else {
 			return;
 		}
@@ -139,64 +138,10 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		
 		if (!frags.isEmpty()) {
 			Fragment[] fragmentsArray = frags.toArray(new Fragment[frags.size()]);
-			ExtractMethodRecomendation rec = this.addRecomendation(model, totalSize, fragmentsArray);
+			ExtractMethodRecomendation rec = this.addRecomendation(model, totalSize, selected.getReorderedStatements(), fragmentsArray);
 			this.computeAndSetScore(rec, model, block, selected);
 		}
     }
-
-	static enum Placement {
-		BEFORE,
-		INSIDE,
-		AFTER,
-		UNASSIGNED
-	}
-
-	private static class StatementSelection {
-		Placement[] selected;
-		int totalSize;
-		private BlockModel block;
-		StatementSelection(BlockModel block) {
-			this.block = block;
-			this.selected = new Placement[block.getChildren().size()];
-			Arrays.fill(this.selected, Placement.UNASSIGNED);
-			this.totalSize = 0;
-		}
-		public void set(int index, Placement placement) {
-			if (Placement.INSIDE.equals(placement)) {
-				this.selected[index] = placement;
-				this.totalSize += this.block.get(index).getTotalSize();
-			} else if (this.isSelected(index)) {
-				this.selected[index] = placement;
-				this.totalSize -= this.block.get(index).getTotalSize();
-			} else {
-				this.selected[index] = placement;
-			}
-		}
-		public Placement get(int index) {
-			return this.selected[index];
-		}
-		public boolean isSelected(int index) {
-			return this.get(index).equals(Placement.INSIDE);
-		}
-		public int getTotalSize() {
-			return this.totalSize;
-		}
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			sb.append("B" + this.block.getIndex() + ": [");
-			for (Placement p : this.selected) {
-				switch (p) {
-				case UNASSIGNED: sb.append("-"); break;
-				case BEFORE: sb.append("\u2191"); break;
-				case INSIDE: sb.append("E"); break;
-				case AFTER: sb.append("\u2193"); break;
-				}
-			}
-			sb.append("]");
-			return sb.toString();
-		}
-	}
 
 	protected void computeAndSetScore(ExtractMethodRecomendation rec, MethodModel model, BlockModel block, StatementSelection selected) {
 		final ExtractionSlice slice = rec.getSlice();
@@ -273,13 +218,17 @@ public class NonSequentialEmrGenerator extends SimpleEmrGenerator {
 		double score = (distP + distT + distV) / 3.0;
 		//double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
 		
+		String safenessExplanation = "";
 		if (slice.isComposed()) {
 			// Penalty for unsafe recommendation
-			score = score - (score * this.settings.getPenalty());
+			double errorProbability = this.settings.getPenalty();
+			double safeness = Math.pow(1.0 - errorProbability, rec.getReorderedSize());
+			score = score * safeness;
+			safenessExplanation = String.format("safeness = %.2f", safeness);
 		}
 		
 		rec.setScore(score);
-		rec.setExplanation(String.format("P = %.2f, T = %.2f, V = %.2f", distP, distT, distV));
+		rec.setExplanation(String.format("P = %.2f, T = %.2f, V = %.2f %s", distP, distT, distV, safenessExplanation));
 		//rec.setExplanation(String.format("P = %.2f * %.2f, T = %.2f * %.2f, V = %.2f * %.2f", distP, meanP, distT, meanT, distV, meanV));
 	}
 

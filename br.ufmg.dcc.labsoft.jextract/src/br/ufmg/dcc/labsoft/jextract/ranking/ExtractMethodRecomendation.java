@@ -11,6 +11,7 @@ public class ExtractMethodRecomendation {
 	private int duplicatedSize;
 	private int extractedSize;
 	private int originalSize;
+	private int reorderedSize = 0;
 	final ExtractionSlice slice;
 	private SetsSimilarity ssimT;
 	private SetsSimilarity ssimV;
@@ -131,6 +132,14 @@ public class ExtractMethodRecomendation {
 
 	public void setExtractedSize(int extractedSize) {
 		this.extractedSize = extractedSize;
+	}
+
+	public int getReorderedSize() {
+		return this.reorderedSize;
+	}
+
+	public void setReorderedSize(int reorderedSize) {
+		this.reorderedSize = reorderedSize;
 	}
 
 	public double getPt() {
