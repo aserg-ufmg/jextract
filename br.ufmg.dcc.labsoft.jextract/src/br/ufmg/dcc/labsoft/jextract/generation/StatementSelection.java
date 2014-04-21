@@ -2,18 +2,31 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 import java.util.Arrays;
 
+import org.eclipse.jdt.core.dom.ASTVisitor;
+
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
+import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 
 public class StatementSelection {
-	Placement[] selected;
+	private final MethodModel methodModel;
+	private final BlockModel block;
+	final Placement[] selected;
 	int totalSize;
-	private BlockModel block;
 
-	StatementSelection(BlockModel block) {
+	StatementSelection(MethodModel methodModel, BlockModel block) {
+		this.methodModel = methodModel;
 		this.block = block;
 		this.selected = new Placement[block.getChildren().size()];
 		Arrays.fill(this.selected, Placement.UNASSIGNED);
 		this.totalSize = 0;
+	}
+
+	public MethodModel getMethodModel() {
+		return this.methodModel;
+	}
+
+	public BlockModel getBlock() {
+		return this.block;
 	}
 
 	public void set(int index, Placement placement) {
@@ -74,6 +87,16 @@ public class StatementSelection {
 			}
 		}
 		return count;
+	}
+
+	public void acceptFilterBySelected(ASTVisitor visitor) {
+		
+	}
+
+	public void acceptFilterBySelected(boolean selected, ASTVisitor visitor) {
+		this.methodModel.getAstNode().accept(new ASTVisitor() {
+			//pre
+		});
 	}
 
 }

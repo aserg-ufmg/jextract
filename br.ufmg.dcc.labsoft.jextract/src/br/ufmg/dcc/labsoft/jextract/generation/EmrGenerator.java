@@ -31,20 +31,27 @@ import br.ufmg.dcc.labsoft.jextract.model.impl.MethodModelBuilder;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
-import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
-public class SimpleEmrGenerator {
+public class EmrGenerator {
 
-	protected final Settings settings;
+	private final Settings settings;
 	private final List<ExtractMethodRecomendation> recomendations;
 	private List<ExtractMethodRecomendation> recomendationsForMethod;
 	private EmrRecommender recommender;
 	private ProjectRelevantSet goldset = null;
-
-	public SimpleEmrGenerator(List<ExtractMethodRecomendation> recomendations, Settings settings) {
+	private EmrScoringFunction scoringFn;
+	
+	private int recursiveCalls = 0;
+	private MethodModel model;
+	
+	private BlockModel block;
+	private StatementSelection selected;
+	
+	public EmrGenerator(List<ExtractMethodRecomendation> recomendations, Settings settings) {
 		this.settings = settings;
 		this.recomendations = recomendations;
 		this.recommender = new EmrRecommender(settings);
+		this.scoringFn = new EmrScoringFunction(settings);
 	}
 
 	public void setGoldset(ProjectRelevantSet goldset) {
@@ -71,7 +78,7 @@ public class SimpleEmrGenerator {
 	}
 
 	// use ASTParse to parse string
-	void analyseMethods(final ICompilationUnit src, final IMethod onlyThisMethod) throws JavaModelException {
+	private void analyseMethods(final ICompilationUnit src, final IMethod onlyThisMethod) throws JavaModelException {
 
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
 		parser.setSource(src);
@@ -94,40 +101,18 @@ public class SimpleEmrGenerator {
 		});
 	}
 
-	protected void forEachSlice(MethodModel model) {
-		int methodSize = model.getTotalSize();
-		int minSize = this.settings.getMinSize();
-		for (BlockModel block: model.getBlocks()) {
-			List<? extends StatementModel> children = block.getChildren();
-			for (int last = children.size() - 1; last >= 0; last--) {
-				int sliceSize = 0;
-				for (int first = last; first >= 0; first--) {
-					sliceSize += children.get(first).getTotalSize();
-					if (sliceSize >= minSize) {
-						int remaining = methodSize - sliceSize;
-						if (remaining >= minSize) {
-							int start = block.get(first).getAstNode().getStartPosition();
-							StatementModel lastStatement = block.get(last);
-							Statement lastStatementAstNode = lastStatement.getAstNode();
-							int length = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength() - start;
-							if (Utils.canExtract(model.getCompilationUnit(), start, length)) {
-								this.handleSequentialSlice(model, block, first, last, sliceSize);
-							}
-						}
-					}
-				}
-			}
+	private void forEachSlice(MethodModel m) {
+		this.recursiveCalls = 0;
+		this.model = m;
+		for (BlockModel b: m.getBlocks()) {
+			this.block = b;
+			this.selected = new StatementSelection(m, b);
+			this.init(0);
 		}
+		//System.out.println("cost: " + this.recursiveCalls);
 	}
 
-	private void handleSequentialSlice(MethodModel model, BlockModel block, int first, int last, int totalSize) {
-		int start = block.get(first).getAstNode().getStartPosition();
-		Statement lastStatementAstNode = block.get(last).getAstNode();
-		int end = lastStatementAstNode.getStartPosition() + lastStatementAstNode.getLength();
-		this.addRecomendation(model, totalSize, 0, new Fragment(start, end, false));
-	}
-
-	protected ExtractMethodRecomendation addRecomendation(MethodModel model, int totalSize, int reorderedSize, Fragment ... fragments) {
+	private ExtractMethodRecomendation addRecomendation(MethodModel model, int totalSize, int reorderedSize, Fragment ... fragments) {
 		ExtractMethodRecomendation recomendation = new ExtractMethodRecomendation(recomendations.size() + 1,
 				model.getDeclaringType(), model.getMethodSignature(), new ExtractionSlice(fragments));
 
@@ -143,7 +128,7 @@ public class SimpleEmrGenerator {
 		return recomendation;
     }
 
-	void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
+	private void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
@@ -167,4 +152,105 @@ public class SimpleEmrGenerator {
 		//System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
 	}
 
+	private void init(int i) {
+		if (!this.checkBounds(i)) {
+			return;
+		}
+		this.selected.set(i, Placement.BEFORE);
+		init(i + 1);
+		this.selected.set(i, Placement.UNASSIGNED);
+		extract(i, 1);
+    }
+	
+	private void extract(int i, int fragments) {
+		if (!this.checkBounds(i)) {
+			return;
+		}
+		int newSize = this.selected.getTotalSize() + this.block.get(i).getTotalSize();
+		if ((this.model.getTotalSize() - newSize) < this.settings.getMinSize()) {
+			return;
+		}
+		if (!this.canBePlaced(i, Placement.INSIDE)) {
+			return;
+		}
+		this.selected.set(i, Placement.INSIDE);
+		extract(i + 1, fragments);
+		end();
+		skip(i + 1, fragments + 1);
+		this.selected.set(i, Placement.UNASSIGNED);
+	}
+	
+	private void skip(int i, int fragments) {
+		if (!this.checkBounds(i) || fragments > this.settings.getMaxFragments()) {
+			return;
+		}
+		if (this.canBePlaced(i, Placement.MOVED_BEFORE)) {
+			this.selected.set(i, Placement.MOVED_BEFORE);
+		} else if (this.canBePlaced(i, Placement.MOVED_AFTER)) {
+			this.selected.set(i, Placement.MOVED_AFTER);
+		} else {
+			return;
+		}
+		
+		skip(i + 1, fragments);
+		extract(i + 1, fragments);
+		this.selected.set(i, Placement.UNASSIGNED);
+	}
+	
+	private void end() {
+		if (selected.getTotalSize() < this.settings.getMinSize()) {
+			return;
+    	}
+		this.handleSlice(model, block, selected);
+	}
+
+	private boolean checkBounds(int i) {
+		this.recursiveCalls++;
+		if (i >= block.getChildren().size()) {
+			return false;
+		}
+		return true;
+	}
+
+	private boolean canBePlaced(int i, Placement placement) {
+		for (int j = i - 1; j >= 0; j--) {
+			// If an statement will be placed before some of its depencies, fail
+			boolean iIsBeforeJ = this.selected.get(j).compareTo(placement) > 0;
+			boolean iDependsOnJ = this.block.depends(i, j);
+			if (iIsBeforeJ && iDependsOnJ) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private void handleSlice(MethodModel model, BlockModel block, StatementSelection selected) {
+		List<? extends StatementModel> children = block.getChildren();
+		List<Fragment> frags = new ArrayList<Fragment>();
+		int length = children.size();
+		int totalSize = 0;
+		for (int i = 0, j = 0; i < length; i = j) {
+			while (i < length && !selected.isSelected(i)) {
+				i++;
+				j++;
+			}
+			while (j < length && selected.isSelected(j)) {
+				totalSize += children.get(j).getTotalSize();
+				j++;
+			}
+			if (i < length) {
+				Statement s1 = children.get(i).getAstNode();
+				Statement s2 = children.get(j - 1).getAstNode();
+				frags.add(new Fragment(s1.getStartPosition(), s2.getStartPosition() + s2.getLength(), false));
+			}
+		}
+		
+		if (!frags.isEmpty()) {
+			Fragment[] fragmentsArray = frags.toArray(new Fragment[frags.size()]);
+			ExtractMethodRecomendation rec = this.addRecomendation(model, totalSize, selected.getReorderedStatements(), fragmentsArray);
+			ScoreResult scoreResult = this.scoringFn.computeScore(rec.getSlice(), selected);
+			rec.setScore(scoreResult.getScore());
+			rec.setExplanation(scoreResult.getExplanation());
+		}
+    }
 }
