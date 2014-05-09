@@ -197,4 +197,35 @@ public class EmrRecommender {
 	    }
     }
 
+	/*
+	private void reorder(AstNode node) {
+		// creation of a Document
+		   ICompilationUnit cu = ... ; // content is "public class X {\n}"
+		   String source = cu.getSource();
+		   Document document= new Document(source);
+
+		   // creation of DOM/AST from a ICompilationUnit
+		   ASTParser parser = ASTParser.newParser(AST.JLS3);
+		   parser.setSource(cu);
+		   CompilationUnit astRoot = (CompilationUnit) parser.createAST(null);
+
+		   // creation of ASTRewrite
+		   ASTRewrite rewrite = ASTRewrite.create(astRoot.getAST());
+
+		   // description of the change
+		   SimpleName oldName = ((TypeDeclaration)astRoot.types().get(0)).getName();
+		   SimpleName newName = astRoot.getAST().newSimpleName("Y");
+		   rewrite.replace(oldName, newName, null);
+
+		   // computation of the text edits
+		   TextEdit edits = rewrite.rewriteAST(document, cu.getJavaProject().getOptions(true));
+
+		   // computation of the new source code
+		   edits.apply(document);
+		   String newSource = document.get();
+
+		   // update of the compilation unit
+		   cu.getBuffer().setContents(newSource);
+	}
+	*/
 }

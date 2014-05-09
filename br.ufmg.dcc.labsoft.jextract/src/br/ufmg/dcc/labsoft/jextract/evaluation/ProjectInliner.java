@@ -9,12 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
-import br.ufmg.dcc.labsoft.jextract.ranking.StatementsCountVisitor;
-import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
-import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -25,8 +19,10 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IOpenable;
+import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.WorkingCopyOwner;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -40,6 +36,13 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
+import org.eclipse.ltk.core.refactoring.Change;
+
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
+import br.ufmg.dcc.labsoft.jextract.ranking.StatementsCountVisitor;
+import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class ProjectInliner {
 
@@ -134,12 +137,14 @@ public class ProjectInliner {
 				}
 			});
 			
-			if (!list.isEmpty()) {
-				MethodInvocationCandidate mic = list.get(0);
-				String changedMethod = mic.getInvoker().getKey();
-				applyInlineMethod(icu, mic);
-				this.methodsInlined++;
-				modifiedMethods.add(changedMethod);
+			for (MethodInvocationCandidate mic : list) {
+				boolean applied = applyInlineMethod(icu, mic);
+				if (applied) {
+					this.methodsInlined++;
+					String changedMethod = mic.getInvoker().getKey();
+					modifiedMethods.add(changedMethod);
+					break;
+				}
 			}
 		}
 	}
@@ -174,36 +179,57 @@ public class ProjectInliner {
 		}
 	}
 
-	private void applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
+	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
 		try {
 			MethodInvocation invocation = mic.getInvocation();
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
-			
+
 			Statement enclosingStatement = findEnclosingStatement(invocation);
 			boolean insideBlock = enclosingStatement.getParent() instanceof Block;
 			int markerStart = enclosingStatement.getStartPosition();
 			int markerOffset = insertMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
 
-			/*
-			CompilationUnit cu = this.compile(icu, true);
-			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start + markerOffset, length);
+
+			IProgressMonitor pm = new NullProgressMonitor();
+			// create requestor for accumulating discovered problems
+			final ProblemDetector problemDetector = new ProblemDetector();
+			ICompilationUnit workingCopy = icu.getWorkingCopy(new WorkingCopyOwner() {
+				@Override
+				public IProblemRequestor getProblemRequestor(ICompilationUnit workingCopy) {
+					// TODO Auto-generated method stub
+					return problemDetector;
+				}
+			}, pm);
+
+			CompilationUnit cu = this.compile(workingCopy, true);
+			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(workingCopy, cu, start + markerOffset, length);
+			if (refactoring == null) {
+				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				return false;
+			}
 			
 			refactoring.setDeleteSource(false);
 			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
-			IProgressMonitor pm = new NullProgressMonitor();
-			
+
 			if (!refactoring.checkAllConditions(pm).isOK()) {
 				throw new RuntimeException("preconditions failed for " + mic.getInvoker().getKey());
 			}
 			Change change = refactoring.createChange(pm);
 			change.perform(pm);
-			*/
 
-			removeMarker(icu, markerStart, insideBlock);
-			
-			System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
-			
+			workingCopy.reconcile(ICompilationUnit.NO_AST, true, null, null);
+			if (problemDetector.hasProblems()) {
+				workingCopy.discardWorkingCopy();
+				System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				return false;
+			} else {
+				workingCopy.commitWorkingCopy(false, pm);
+				System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				return true;
+			}
+			//removeMarker(icu, markerStart, insideBlock);
+
 		} catch (CoreException e) {
 			throw new RuntimeException(e);
 		}
@@ -340,10 +366,14 @@ public class ProjectInliner {
 		if (invokedData.size < this.minSize || callerData.size < this.minSize) {
 			return false;
 		}
-		double ratio = ((double) invokedData.size) / callerData.size;
-		if (ratio > 2.0 || ratio < 0.25) {
-			return false;
-		}
+//		double ratio = ((double) invokedData.size) / callerData.size;
+//		if (ratio > 2.0) {
+//			return false;
+//		}
+//		if (ratio < 0.25) {
+//			return false;
+//		}
+		
 		if (this.modifiedMethods.contains(invokedMethod.getKey())) {
 			return false;
 		}
@@ -354,15 +384,15 @@ public class ProjectInliner {
 //		if (sameClass) {
 //			return false;
 //		}
-		/*
-		MethodData invokedData = mMap.get(invokedMethod.getKey());
-		MethodData callerData = mMap.get(caller.getKey());
+		
 		if (invokedData.hasPrivate && !sameClass) {
-			return false;
+			System.out.println("hasPrivate");
+			//return false;
 		}
 		if (invokedData.hasPackagePrivate && !samePackage) {
-			return false;
-		}*/
+			System.out.println("hasPackagePrivate");
+			//return false;
+		}
 
 		return true;
 	}
