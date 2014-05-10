@@ -1,19 +1,17 @@
 package br.ufmg.dcc.labsoft.jextract.evaluation;
 
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.MethodInvocation;
 
 public final class MethodInvocationCandidate {
 
 	private final ICompilationUnit src;
-	private final IMethodBinding invoker;
-	private final MethodInvocation invocation;
-	private final IMethodBinding invoked;
+	private final String invoker;
+	private final int invocation;
+	private final String invoked;
 	private final int size;
 	private final boolean sameClass;
 
-	public MethodInvocationCandidate(ICompilationUnit src, IMethodBinding invoker, MethodInvocation invocation, IMethodBinding invoked, int size, boolean sameClass) {
+	public MethodInvocationCandidate(ICompilationUnit src, String invoker, int invocation, String invoked, int size, boolean sameClass) {
 		this.src = src;
 		this.invoker = invoker;
 		this.invocation = invocation;
@@ -26,15 +24,15 @@ public final class MethodInvocationCandidate {
 		return src;
 	}
 
-	public IMethodBinding getInvoker() {
+	public String getInvoker() {
 		return invoker;
 	}
 
-	public MethodInvocation getInvocation() {
+	public int getInvocation() {
 		return invocation;
 	}
 
-	public IMethodBinding getInvoked() {
+	public String getInvoked() {
 		return invoked;
 	}
 

@@ -18,7 +18,6 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IOpenable;
 import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -120,31 +119,27 @@ public class ProjectInliner {
 	}
 
 	private void applyBestInline(ICompilationUnit icu, String mKey) {
-		CompilationUnit cu = this.compile(icu, true);
-		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
-		if (this.isValid(mKey, methodDeclaration)) {
-			List<MethodInvocationCandidate> list = findMethodInvocations(icu, cu, methodDeclaration);
-			Collections.sort(list, new Comparator<MethodInvocationCandidate>() {
-				@Override
-				public int compare(MethodInvocationCandidate o1, MethodInvocationCandidate o2) {
-					if (o1.isSameClass() && !o2.isSameClass()) {
-						return 1;
-					}
-					if (!o1.isSameClass() && o2.isSameClass()) {
-						return -1;
-					}
-					return -(o1.getSize() - o2.getSize());
+		List<MethodInvocationCandidate> list = findMethodInvocations(icu, mKey);
+		Collections.sort(list, new Comparator<MethodInvocationCandidate>() {
+			@Override
+			public int compare(MethodInvocationCandidate o1, MethodInvocationCandidate o2) {
+				if (o1.isSameClass() && !o2.isSameClass()) {
+					return 1;
 				}
-			});
-			
-			for (MethodInvocationCandidate mic : list) {
-				boolean applied = applyInlineMethod(icu, mic);
-				if (applied) {
-					this.methodsInlined++;
-					String changedMethod = mic.getInvoker().getKey();
-					modifiedMethods.add(changedMethod);
-					break;
+				if (!o1.isSameClass() && o2.isSameClass()) {
+					return -1;
 				}
+				return -(o1.getSize() - o2.getSize());
+			}
+		});
+		
+		for (MethodInvocationCandidate mic : list) {
+			boolean applied = applyInlineMethod(icu, mic);
+			if (applied) {
+				this.methodsInlined++;
+				String changedMethod = mic.getInvoker();
+				modifiedMethods.add(changedMethod);
+				break;
 			}
 		}
 	}
@@ -181,15 +176,13 @@ public class ProjectInliner {
 
 	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
 		try {
-			MethodInvocation invocation = mic.getInvocation();
+			CompilationUnit cu = this.compile(icu, true);
+			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
 
 			Statement enclosingStatement = findEnclosingStatement(invocation);
 			boolean insideBlock = enclosingStatement.getParent() instanceof Block;
-			int markerStart = enclosingStatement.getStartPosition();
-			int markerOffset = insertMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
-
 
 			IProgressMonitor pm = new NullProgressMonitor();
 			// create requestor for accumulating discovered problems
@@ -197,15 +190,18 @@ public class ProjectInliner {
 			ICompilationUnit workingCopy = icu.getWorkingCopy(new WorkingCopyOwner() {
 				@Override
 				public IProblemRequestor getProblemRequestor(ICompilationUnit workingCopy) {
-					// TODO Auto-generated method stub
 					return problemDetector;
 				}
 			}, pm);
+			final String backup = workingCopy.getBuffer().getContents();
+			
+			int markerStart = enclosingStatement.getStartPosition();
+			int markerOffset = insertMarker(workingCopy, markerStart, enclosingStatement.getLength(), insideBlock);
 
-			CompilationUnit cu = this.compile(workingCopy, true);
+			cu = workingCopy.reconcile(AST.JLS4, true, null, null);
 			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(workingCopy, cu, start + markerOffset, length);
 			if (refactoring == null) {
-				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return false;
 			}
 			
@@ -213,19 +209,22 @@ public class ProjectInliner {
 			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
 
 			if (!refactoring.checkAllConditions(pm).isOK()) {
-				throw new RuntimeException("preconditions failed for " + mic.getInvoker().getKey());
+				throw new RuntimeException("preconditions failed for " + mic.getInvoker());
 			}
 			Change change = refactoring.createChange(pm);
 			change.perform(pm);
 
 			workingCopy.reconcile(ICompilationUnit.NO_AST, true, null, null);
 			if (problemDetector.hasProblems()) {
+				workingCopy.getBuffer().setContents(backup);
+				workingCopy.commitWorkingCopy(false, pm);
 				workingCopy.discardWorkingCopy();
-				System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return false;
 			} else {
 				workingCopy.commitWorkingCopy(false, pm);
-				System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+				workingCopy.discardWorkingCopy();
+				System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return true;
 			}
 			//removeMarker(icu, markerStart, insideBlock);
@@ -235,10 +234,10 @@ public class ProjectInliner {
 		}
 	}
 
-	private int insertMarker(ICompilationUnit icu, int startPosition, int length, boolean insideBlock) throws JavaModelException {
-		IProgressMonitor pm = new NullProgressMonitor();
-		ICompilationUnit wc = icu.getWorkingCopy(pm);
-		IBuffer buffer = ((IOpenable) wc).getBuffer();
+	private int insertMarker(ICompilationUnit wc, int startPosition, int length, boolean insideBlock) throws JavaModelException {
+		//IProgressMonitor pm = new NullProgressMonitor();
+		//ICompilationUnit wc = icu.getWorkingCopy(pm);
+		IBuffer buffer = wc.getBuffer();
 		String content = buffer.getContents();
 		
 		buffer.setContents(content.substring(0, startPosition));
@@ -254,10 +253,10 @@ public class ProjectInliner {
 //			buffer.append("}");
 //		}
 		buffer.append(content.substring(startPosition + length));
-		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
+		//wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
 		
-		wc.commitWorkingCopy(false, pm);
-		wc.discardWorkingCopy();
+		//wc.commitWorkingCopy(false, pm);
+		//wc.discardWorkingCopy();
 		
 //		if (!insideBlock) {
 //			return marker.length() + 1;
@@ -324,10 +323,17 @@ public class ProjectInliner {
 		}
 	}
 
-	private List<MethodInvocationCandidate> findMethodInvocations(final ICompilationUnit icu, final CompilationUnit cu, final MethodDeclaration methodDeclaration) {
+	private List<MethodInvocationCandidate> findMethodInvocations(final ICompilationUnit icu, final String mKey) {
 		final List<MethodInvocationCandidate> invocations = new ArrayList<MethodInvocationCandidate>();
-		final IMethodBinding caller = methodDeclaration.resolveBinding();
-		final ITypeBinding callerClass = caller.getDeclaringClass();
+		
+		CompilationUnit cu = this.compile(icu, true);
+		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		if (!this.isValid(mKey, methodDeclaration)) {
+			return invocations;
+		}
+		
+		final IMethodBinding invoker = methodDeclaration.resolveBinding();
+		final ITypeBinding callerClass = invoker.getDeclaringClass();
 		
 		StatementsCountVisitor counter = new StatementsCountVisitor();
 		methodDeclaration.accept(counter);
@@ -337,26 +343,51 @@ public class ProjectInliner {
 			return invocations;
 		}
 		this.methodsAnalysed++;
-		
-		methodDeclaration.accept(new ASTVisitor() {
-			public boolean visit(MethodInvocation node) {
+
+		Map<String, List<MethodInvocation>> map = this.findMethodInvocationNodes(cu, mKey);
+		for (Map.Entry<String, List<MethodInvocation>> entry : map.entrySet()) {
+			String invokedKey = entry.getKey();
+			List<MethodInvocation> list = entry.getValue();
+			for (int i = 0; i < list.size(); i++) {
+				MethodInvocation node = list.get(i);
 				final IMethodBinding invokedMethod = node.resolveMethodBinding();
-				if (isInvokedValid(caller, invokedMethod)) {
+				
+				if (isInvokedValid(invoker, invokedMethod)) {
 					final ITypeBinding invokedClass = invokedMethod.getDeclaringClass();
 					boolean sameClass = callerClass.equals(invokedClass);
 					if (meetsJdtPreconditions(icu, cu, node.getStartPosition(), node.getLength())) {
-						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, caller, node, invokedMethod, getInvokedMethodSize(invokedMethod), sameClass);
+						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, invoker.getKey(), i, invokedKey, getInvokedMethodSize(invokedMethod), sameClass);
 						invocations.add(mic);
-						System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker().getName(), mic.getInvoked().getName(), mic.getSize()));
+						System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 					}
 				}
-				return true;
 			}
-		});
+		}
 		
 		return invocations;
 	}
+	
+	private MethodInvocation findMethodInvocationNode(CompilationUnit cu, String invokerKey, String invokedKey, int position) {
+		return this.findMethodInvocationNodes(cu, invokerKey).get(invokedKey).get(position);
+	}
 
+	private Map<String, List<MethodInvocation>> findMethodInvocationNodes(CompilationUnit cu, String mKey) {
+		final Map<String, List<MethodInvocation>> invocations = new HashMap<String, List<MethodInvocation>>();
+		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		methodDeclaration.accept(new ASTVisitor() {
+			public boolean visit(MethodInvocation node) {
+				final IMethodBinding invokedMethod = node.resolveMethodBinding();
+				String invokedKey = invokedMethod.getKey();
+				if (!invocations.containsKey(invokedKey)) {
+					invocations.put(invokedKey, new ArrayList<MethodInvocation>());
+				}
+				invocations.get(invokedKey).add(node);
+				return true;
+			}
+		});
+		return invocations;
+	}
+	
 	private boolean isInvokedValid(IMethodBinding caller, IMethodBinding invokedMethod) {
 		MethodData invokedData = mMap.get(invokedMethod.getKey());
 		MethodData callerData = mMap.get(caller.getKey());
