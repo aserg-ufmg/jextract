@@ -60,7 +60,7 @@ public class ProjectInliner {
 		this.modifiedMethods = new HashSet<String>();
 	}
 
-	public void run(IProject project) throws CoreException {
+	public void run(IProject project) throws Exception {
 		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
 		for (ICompilationUnit icu : files) {
 			CompilationUnit cu = this.compile(icu, true);
@@ -69,6 +69,12 @@ public class ProjectInliner {
 				this.registerMethod(cu, mKey);
 			}
 		}
+		
+		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
+		for (ICompilationUnit icu : files) {
+			rewriter.rewrite(icu);
+		}
+		
 		for (ICompilationUnit icu : files) {
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
@@ -294,10 +300,7 @@ public class ProjectInliner {
 		methodDeclaration.accept(counter);
 		int size = counter.getCount();
 		
-		PrivateAccessVisitor pav = new PrivateAccessVisitor();
-		methodDeclaration.accept(pav);
-		
-		this.mMap.put(mKey, new MethodData(size, pav.hasPrivate(), pav.hasPackagePrivate()));
+		this.mMap.put(mKey, new MethodData(size));
 	}
 
 	private void extractEmr(List<ExtractMethodRecomendation> emrList, ICompilationUnit icu, CompilationUnit cu, String mKey) throws JavaModelException {
@@ -359,7 +362,7 @@ public class ProjectInliner {
 					if (meetsJdtPreconditions(icu, cu, node.getStartPosition(), node.getLength())) {
 						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, invoker.getKey(), i, invokedKey, getInvokedMethodSize(invokedMethod), sameClass);
 						invocations.add(mic);
-						System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
+						//System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 					}
 				}
 			}
@@ -417,15 +420,6 @@ public class ProjectInliner {
 //			return false;
 //		}
 		
-		if (invokedData.hasPrivate && !sameClass) {
-			System.out.println("hasPrivate");
-			//return false;
-		}
-		if (invokedData.hasPackagePrivate && !samePackage) {
-			System.out.println("hasPackagePrivate");
-			//return false;
-		}
-
 		return true;
 	}
 	
