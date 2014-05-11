@@ -9,7 +9,9 @@ public class ProblemDetector implements IProblemRequestor {
 
 	@Override
 	public void acceptProblem(IProblem problem) {
-		this.problems = true;
+		if (problem.isError()) {
+			this.problems = true;
+		}
 	}
 
 	@Override

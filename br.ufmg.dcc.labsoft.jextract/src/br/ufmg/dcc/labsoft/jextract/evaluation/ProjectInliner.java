@@ -53,6 +53,7 @@ public class ProjectInliner {
 	private int minSize = 3;
 	private int methodsAnalysed = 0;
 	private int methodsInlined = 0;
+	private IProgressMonitor pm = new NullProgressMonitor();
 
 	public ProjectInliner() {
 		this.mMap = new HashMap<String, MethodData>();
@@ -167,8 +168,7 @@ public class ProjectInliner {
 			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start, length);
 			refactoring.setDeleteSource(false);
 			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
-			IProgressMonitor pm = new NullProgressMonitor();
-			return refactoring.checkAllConditions(pm).isOK();
+			return refactoring.checkAllConditions(this.pm).isOK();
 		} catch (CoreException e) {
 			throw new RuntimeException(e);
 		}
@@ -181,48 +181,49 @@ public class ProjectInliner {
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
 
+			// Insert marker
 			Statement enclosingStatement = findEnclosingStatement(invocation);
 			boolean insideBlock = enclosingStatement.getParent() instanceof Block;
 
-			IProgressMonitor pm = new NullProgressMonitor();
-			// create requestor for accumulating discovered problems
+			final String backup = icu.getSource();
+			
+			int markerStart = enclosingStatement.getStartPosition();
+			int markerOffset = insertMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
+
+			// Inline method
+			cu = this.compile(icu, true);
+			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start + markerOffset, length);
+			if (refactoring == null) {
+				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
+				return false;
+			}
+			refactoring.setDeleteSource(false);
+			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
+			if (!refactoring.checkAllConditions(this.pm).isOK()) {
+				throw new RuntimeException("preconditions failed for " + mic.getInvoker());
+			}
+			Change change = refactoring.createChange(this.pm);
+			change.perform(this.pm);
+
+			
+			// Check for compilation problems
 			final ProblemDetector problemDetector = new ProblemDetector();
 			ICompilationUnit workingCopy = icu.getWorkingCopy(new WorkingCopyOwner() {
 				@Override
 				public IProblemRequestor getProblemRequestor(ICompilationUnit workingCopy) {
 					return problemDetector;
 				}
-			}, pm);
-			final String backup = workingCopy.getBuffer().getContents();
-			
-			int markerStart = enclosingStatement.getStartPosition();
-			int markerOffset = insertMarker(workingCopy, markerStart, enclosingStatement.getLength(), insideBlock);
-
-			cu = workingCopy.reconcile(AST.JLS4, true, null, null);
-			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(workingCopy, cu, start + markerOffset, length);
-			if (refactoring == null) {
-				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
-				return false;
-			}
-			
-			refactoring.setDeleteSource(false);
-			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
-
-			if (!refactoring.checkAllConditions(pm).isOK()) {
-				throw new RuntimeException("preconditions failed for " + mic.getInvoker());
-			}
-			Change change = refactoring.createChange(pm);
-			change.perform(pm);
-
-			workingCopy.reconcile(ICompilationUnit.NO_AST, true, null, null);
+			}, this.pm);
 			if (problemDetector.hasProblems()) {
 				workingCopy.getBuffer().setContents(backup);
-				workingCopy.commitWorkingCopy(false, pm);
+				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
+				workingCopy.commitWorkingCopy(false, this.pm);
 				workingCopy.discardWorkingCopy();
 				System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return false;
 			} else {
-				workingCopy.commitWorkingCopy(false, pm);
+				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
+				workingCopy.commitWorkingCopy(false, this.pm);
 				workingCopy.discardWorkingCopy();
 				System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return true;
@@ -234,9 +235,9 @@ public class ProjectInliner {
 		}
 	}
 
-	private int insertMarker(ICompilationUnit wc, int startPosition, int length, boolean insideBlock) throws JavaModelException {
+	private int insertMarker(ICompilationUnit icu, int startPosition, int length, boolean insideBlock) throws JavaModelException {
 		//IProgressMonitor pm = new NullProgressMonitor();
-		//ICompilationUnit wc = icu.getWorkingCopy(pm);
+		ICompilationUnit wc = icu.getWorkingCopy(pm);
 		IBuffer buffer = wc.getBuffer();
 		String content = buffer.getContents();
 		
@@ -253,10 +254,10 @@ public class ProjectInliner {
 //			buffer.append("}");
 //		}
 		buffer.append(content.substring(startPosition + length));
-		//wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
+		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
 		
-		//wc.commitWorkingCopy(false, pm);
-		//wc.discardWorkingCopy();
+		wc.commitWorkingCopy(false, pm);
+		wc.discardWorkingCopy();
 		
 //		if (!insideBlock) {
 //			return marker.length() + 1;
