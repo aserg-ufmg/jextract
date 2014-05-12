@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
@@ -336,6 +337,14 @@ public class ProjectInliner {
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
 
+			
+			List<ASTNode> args = invocation.arguments();
+			for (ASTNode arg : args) {
+				if (!(arg instanceof SimpleName)) {
+					//System.out.println(arg);
+				}
+			}
+			
 			// Insert marker
 			Statement enclosingStatement = findEnclosingStatement(invocation);
 			ASTNode parent = enclosingStatement.getParent();
