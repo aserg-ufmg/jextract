@@ -47,8 +47,8 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 public class ProjectInliner {
 
 	private static final String MARKER_CLOSE = "/*}*/";
-	//private static final String MARKER_BODY = ";";
 	private static final String MARKER_OPEN = "/*{*/";
+	private static final String MARKER_PLACEHOLDER = "{;}";
 	Map<String, MethodData> mMap;
 	Set<String> modifiedMethods;
 	private int minSize = 3;
@@ -196,6 +196,12 @@ public class ProjectInliner {
 		int sliceStart = methodSource.indexOf(MARKER_OPEN) + MARKER_OPEN.length();
 		int sliceEnd = methodSource.indexOf(MARKER_CLOSE);
 		if (sliceStart >= 0 && sliceEnd > sliceStart) {
+			while (this.isWhiteSpace(methodSource.charAt(sliceStart))) {
+				sliceStart++;
+			}
+			while (this.isWhiteSpace(methodSource.charAt(sliceEnd - 1))) {
+				sliceEnd--;
+			}
 			Fragment fragment = new Fragment(start + sliceStart, start + sliceEnd, false);
 			boolean canExtract = Utils.canExtract(icu, fragment.start, fragment.length());
 			if (canExtract) {
@@ -209,6 +215,18 @@ public class ProjectInliner {
 		}
 	}
 
+	private boolean isWhiteSpace(char c) {
+		switch (c) {
+		case ' ':
+		case '\n':
+		case '\r':
+		case '\t':
+			return true;
+		default:
+			return false;
+		}
+	}
+	
 	private List<MethodInvocationCandidate> findMethodInvocations(final ICompilationUnit icu, final String mKey) {
 		final List<MethodInvocationCandidate> invocations = new ArrayList<MethodInvocationCandidate>();
 		
@@ -241,11 +259,11 @@ public class ProjectInliner {
 				if (isInvokedValid(invoker, invokedMethod)) {
 					final ITypeBinding invokedClass = invokedMethod.getDeclaringClass();
 					boolean sameClass = callerClass.equals(invokedClass);
-					if (meetsJdtPreconditions(icu, cu, node.getStartPosition(), node.getLength())) {
+					//if (meetsJdtPreconditions(icu, cu, node.getStartPosition(), node.getLength())) {
 						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, invoker.getKey(), i, invokedKey, getInvokedMethodSize(invokedMethod), sameClass);
 						invocations.add(mic);
 						//System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
-					}
+					//}
 				}
 			}
 		}
@@ -298,9 +316,6 @@ public class ProjectInliner {
 		final ITypeBinding invokedClass = invokedMethod.getDeclaringClass();
 		boolean sameClass = callerClass.equals(invokedClass);
 		boolean samePackage = callerClass.getPackage().equals(invokedClass.getPackage());
-//		if (sameClass) {
-//			return false;
-//		}
 		
 		return true;
 	}
@@ -369,7 +384,7 @@ public class ProjectInliner {
 			
 			// Complete the marker
 			if (success) {
-				//this.insertOpenMarker(icu, markerStart + markerOffset);
+				this.insertOpenMarker(icu);
 				return true;
 			} else {
 				ICompilationUnit workingCopy = icu.getWorkingCopy(this.pm);
@@ -391,9 +406,13 @@ public class ProjectInliner {
 		IBuffer buffer = wc.getBuffer();
 		String content = buffer.getContents();
 		buffer.setContents(content.substring(0, startPosition));
+		String openning;
 		if (!insideBlock) {
-			buffer.append("{");
+			openning = "{" + MARKER_PLACEHOLDER;
+		} else {
+			openning = MARKER_PLACEHOLDER;
 		}
+		buffer.append(openning);
 		buffer.append(content.substring(startPosition, startPosition + length));
 		buffer.append(MARKER_CLOSE);
 		if (!insideBlock) {
@@ -403,37 +422,20 @@ public class ProjectInliner {
 		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
 		wc.commitWorkingCopy(false, pm);
 		wc.discardWorkingCopy();
-		if (!insideBlock) {
-			return 1;
-		}
-		return 0;
+		return openning.length();
 	}
 
-	private void insertOpenMarker(ICompilationUnit icu, int position) throws JavaModelException {
+	private void insertOpenMarker(ICompilationUnit icu) throws JavaModelException {
 		ICompilationUnit wc = icu.getWorkingCopy(pm);
 		IBuffer buffer = wc.getBuffer();
 		String content = buffer.getContents();
-		buffer.setContents(content.substring(0, position));
+		int markerStart = content.indexOf(MARKER_PLACEHOLDER);
+		buffer.setContents(content.substring(0, markerStart));
 		buffer.append(MARKER_OPEN);
-		buffer.append(content.substring(position));
+		buffer.append(content.substring(markerStart + MARKER_PLACEHOLDER.length()));
 		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
 		wc.commitWorkingCopy(false, pm);
 		wc.discardWorkingCopy();
-	}
-	
-	private void removeMarker(ICompilationUnit icu, int markerStart, boolean insideBlock) throws JavaModelException {
-//		IProgressMonitor pm = new NullProgressMonitor();
-//		ICompilationUnit wc = icu.getWorkingCopy(pm);
-//		IBuffer buffer = ((IOpenable) wc).getBuffer();
-//		String content = buffer.getContents();
-//		
-//		int start = insideBlock ? markerStart : markerStart + 1;
-//		buffer.setContents(content.substring(0, start + MARKER_OPEN.length()));
-//		buffer.append(content.substring(start + MARKER_OPEN.length() + MARKER_BODY.length()));
-//		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
-//		
-//		wc.commitWorkingCopy(false, pm);
-//		wc.discardWorkingCopy();
 	}
 	
 	private CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
