@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -62,17 +63,17 @@ public class ProjectInliner {
 
 	public void run(IProject project) throws Exception {
 		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
+		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
+		for (ICompilationUnit icu : files) {
+			rewriter.rewrite(icu);
+		}
+
 		for (ICompilationUnit icu : files) {
 			CompilationUnit cu = this.compile(icu, true);
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
 				this.registerMethod(cu, mKey);
 			}
-		}
-		
-		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
-		for (ICompilationUnit icu : files) {
-			rewriter.rewrite(icu);
 		}
 		
 		for (ICompilationUnit icu : files) {
@@ -161,14 +162,6 @@ public class ProjectInliner {
 		return counter.getCount() > this.minSize;
 	}
 
-	private CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(icu);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(resolveBindings);
-		return (CompilationUnit) parser.createAST(null);
-	}
-
 	private boolean meetsJdtPreconditions(ICompilationUnit icu, CompilationUnit cu, int start, int length) {
 		try {
 			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start, length);
@@ -180,119 +173,8 @@ public class ProjectInliner {
 		}
 	}
 
-	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
-		try {
-			CompilationUnit cu = this.compile(icu, true);
-			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
-			int start = invocation.getStartPosition();
-			int length = invocation.getLength();
 
-			// Insert marker
-			Statement enclosingStatement = findEnclosingStatement(invocation);
-			boolean insideBlock = enclosingStatement.getParent() instanceof Block;
 
-			final String backup = icu.getSource();
-			
-			int markerStart = enclosingStatement.getStartPosition();
-			int markerOffset = insertMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
-
-			// Inline method
-			cu = this.compile(icu, true);
-			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start + markerOffset, length);
-			if (refactoring == null) {
-				System.out.println(String.format("NULL inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
-				return false;
-			}
-			refactoring.setDeleteSource(false);
-			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
-			if (!refactoring.checkAllConditions(this.pm).isOK()) {
-				throw new RuntimeException("preconditions failed for " + mic.getInvoker());
-			}
-			Change change = refactoring.createChange(this.pm);
-			change.perform(this.pm);
-
-			
-			// Check for compilation problems
-			final ProblemDetector problemDetector = new ProblemDetector();
-			ICompilationUnit workingCopy = icu.getWorkingCopy(new WorkingCopyOwner() {
-				@Override
-				public IProblemRequestor getProblemRequestor(ICompilationUnit workingCopy) {
-					return problemDetector;
-				}
-			}, this.pm);
-			if (problemDetector.hasProblems()) {
-				workingCopy.getBuffer().setContents(backup);
-				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
-				workingCopy.commitWorkingCopy(false, this.pm);
-				workingCopy.discardWorkingCopy();
-				System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
-				return false;
-			} else {
-				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
-				workingCopy.commitWorkingCopy(false, this.pm);
-				workingCopy.discardWorkingCopy();
-				System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
-				return true;
-			}
-			//removeMarker(icu, markerStart, insideBlock);
-
-		} catch (CoreException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private int insertMarker(ICompilationUnit icu, int startPosition, int length, boolean insideBlock) throws JavaModelException {
-		//IProgressMonitor pm = new NullProgressMonitor();
-		ICompilationUnit wc = icu.getWorkingCopy(pm);
-		IBuffer buffer = wc.getBuffer();
-		String content = buffer.getContents();
-		
-		buffer.setContents(content.substring(0, startPosition));
-//		if (!insideBlock) {
-//			buffer.append("{");
-//		}
-//		String marker = MARKER_OPEN + MARKER_BODY + MARKER_CLOSE;
-//		buffer.append(marker);
-		buffer.append(MARKER_OPEN);
-		buffer.append(content.substring(startPosition, startPosition + length));
-		buffer.append(MARKER_CLOSE);
-//		if (!insideBlock) {
-//			buffer.append("}");
-//		}
-		buffer.append(content.substring(startPosition + length));
-		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
-		
-		wc.commitWorkingCopy(false, pm);
-		wc.discardWorkingCopy();
-		
-//		if (!insideBlock) {
-//			return marker.length() + 1;
-//		}
-		return MARKER_OPEN.length();
-	}
-
-	private void removeMarker(ICompilationUnit icu, int markerStart, boolean insideBlock) throws JavaModelException {
-//		IProgressMonitor pm = new NullProgressMonitor();
-//		ICompilationUnit wc = icu.getWorkingCopy(pm);
-//		IBuffer buffer = ((IOpenable) wc).getBuffer();
-//		String content = buffer.getContents();
-//		
-//		int start = insideBlock ? markerStart : markerStart + 1;
-//		buffer.setContents(content.substring(0, start + MARKER_OPEN.length()));
-//		buffer.append(content.substring(start + MARKER_OPEN.length() + MARKER_BODY.length()));
-//		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
-//		
-//		wc.commitWorkingCopy(false, pm);
-//		wc.discardWorkingCopy();
-	}
-
-	private Statement findEnclosingStatement(ASTNode astNode) {
-		Statement parent = Utils.findEnclosingStatement(astNode); 
-		if (parent == null) {
-			throw new RuntimeException("No parent statement found:\n" + astNode);
-		}
-		return parent;
-	}
 
 	private void registerMethod(CompilationUnit cu, String mKey) {
 		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
@@ -426,4 +308,148 @@ public class ProjectInliner {
 	private int getInvokedMethodSize(IMethodBinding invokedMethod) {
 		return mMap.get(invokedMethod.getKey()).size;
 	}
+	
+	
+	
+	
+	
+	
+	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
+		try {
+			CompilationUnit cu = this.compile(icu, true);
+			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
+			int start = invocation.getStartPosition();
+			int length = invocation.getLength();
+
+			// Insert marker
+			Statement enclosingStatement = findEnclosingStatement(invocation);
+			ASTNode parent = enclosingStatement.getParent();
+			boolean insideBlock = parent instanceof Block || parent instanceof SwitchStatement;
+
+			final String backup = icu.getSource();
+			
+			int markerStart = enclosingStatement.getStartPosition();
+			int markerOffset = this.normalizeAndinsertEndMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
+
+			// Inline method
+			boolean success;
+			cu = this.compile(icu, true);
+			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start + markerOffset, length);
+			refactoring.setDeleteSource(false);
+			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
+			if (!refactoring.checkAllConditions(this.pm).isOK()) {
+				success = false;
+			} else {
+				Change change = refactoring.createChange(this.pm);
+				change.perform(this.pm);
+
+				// Check for compilation problems
+				final ProblemDetector problemDetector = new ProblemDetector();
+				ICompilationUnit workingCopy = icu.getWorkingCopy(new WorkingCopyOwner() {
+					@Override
+					public IProblemRequestor getProblemRequestor(ICompilationUnit workingCopy) {
+						return problemDetector;
+					}
+				}, this.pm);
+				if (problemDetector.hasProblems()) {
+					success = false;
+					workingCopy.getBuffer().setContents(backup);
+					workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
+					workingCopy.commitWorkingCopy(false, this.pm);
+					workingCopy.discardWorkingCopy();
+					System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
+				} else {
+					workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
+					workingCopy.commitWorkingCopy(false, this.pm);
+					workingCopy.discardWorkingCopy();
+					System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
+					success = true;
+				}
+			}
+			
+			// Complete the marker
+			if (success) {
+				//this.insertOpenMarker(icu, markerStart + markerOffset);
+				return true;
+			} else {
+				ICompilationUnit workingCopy = icu.getWorkingCopy(this.pm);
+				workingCopy.getBuffer().setContents(backup);
+				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
+				workingCopy.commitWorkingCopy(false, this.pm);
+				workingCopy.discardWorkingCopy();
+				return false;
+			}
+
+		} catch (CoreException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private int normalizeAndinsertEndMarker(ICompilationUnit icu, int startPosition, int length, boolean insideBlock) throws JavaModelException {
+		//IProgressMonitor pm = new NullProgressMonitor();
+		ICompilationUnit wc = icu.getWorkingCopy(pm);
+		IBuffer buffer = wc.getBuffer();
+		String content = buffer.getContents();
+		buffer.setContents(content.substring(0, startPosition));
+		if (!insideBlock) {
+			buffer.append("{");
+		}
+		buffer.append(content.substring(startPosition, startPosition + length));
+		buffer.append(MARKER_CLOSE);
+		if (!insideBlock) {
+			buffer.append("}");
+		}
+		buffer.append(content.substring(startPosition + length));
+		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
+		wc.commitWorkingCopy(false, pm);
+		wc.discardWorkingCopy();
+		if (!insideBlock) {
+			return 1;
+		}
+		return 0;
+	}
+
+	private void insertOpenMarker(ICompilationUnit icu, int position) throws JavaModelException {
+		ICompilationUnit wc = icu.getWorkingCopy(pm);
+		IBuffer buffer = wc.getBuffer();
+		String content = buffer.getContents();
+		buffer.setContents(content.substring(0, position));
+		buffer.append(MARKER_OPEN);
+		buffer.append(content.substring(position));
+		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
+		wc.commitWorkingCopy(false, pm);
+		wc.discardWorkingCopy();
+	}
+	
+	private void removeMarker(ICompilationUnit icu, int markerStart, boolean insideBlock) throws JavaModelException {
+//		IProgressMonitor pm = new NullProgressMonitor();
+//		ICompilationUnit wc = icu.getWorkingCopy(pm);
+//		IBuffer buffer = ((IOpenable) wc).getBuffer();
+//		String content = buffer.getContents();
+//		
+//		int start = insideBlock ? markerStart : markerStart + 1;
+//		buffer.setContents(content.substring(0, start + MARKER_OPEN.length()));
+//		buffer.append(content.substring(start + MARKER_OPEN.length() + MARKER_BODY.length()));
+//		wc.reconcile(ICompilationUnit.NO_AST, false, null, pm);
+//		
+//		wc.commitWorkingCopy(false, pm);
+//		wc.discardWorkingCopy();
+	}
+	
+	private CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
+		ASTParser parser = ASTParser.newParser(AST.JLS4);
+		parser.setSource(icu);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setResolveBindings(resolveBindings);
+		return (CompilationUnit) parser.createAST(null);
+	}
+
+	private Statement findEnclosingStatement(ASTNode astNode) {
+		Statement parent = Utils.findEnclosingStatement(astNode); 
+		if (parent == null) {
+			throw new RuntimeException("No parent statement found:\n" + astNode);
+		}
+		return parent;
+	}
+	
 }
