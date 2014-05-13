@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.internal.corext.refactoring.code.ExtractTempRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -332,18 +333,12 @@ public class ProjectInliner {
 	
 	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
 		try {
+			while (this.extractArgsToVars(icu, mic));
+			
 			CompilationUnit cu = this.compile(icu, true);
 			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
-
-			
-			List<ASTNode> args = invocation.arguments();
-			for (ASTNode arg : args) {
-				if (!(arg instanceof SimpleName)) {
-					//System.out.println(arg);
-				}
-			}
 			
 			// Insert marker
 			Statement enclosingStatement = findEnclosingStatement(invocation);
@@ -409,6 +404,25 @@ public class ProjectInliner {
 		}
 	}
 
+	private boolean extractArgsToVars(ICompilationUnit icu, MethodInvocationCandidate mic) throws CoreException {
+		CompilationUnit cu = this.compile(icu, true);
+		MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
+		List<ASTNode> args = invocation.arguments();
+		for (ASTNode arg : args) {
+			if (!(arg instanceof SimpleName)) {
+				ExtractTempRefactoring refactoring = new ExtractTempRefactoring(icu, arg.getStartPosition(), arg.getLength());
+				refactoring.setDeclareFinal(true);
+				refactoring.setTempName("v" + System.currentTimeMillis()); 
+				if (refactoring.checkAllConditions(this.pm).isOK()) {
+					Change change = refactoring.createChange(this.pm);
+					change.perform(this.pm);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	private int normalizeAndinsertEndMarker(ICompilationUnit icu, int startPosition, int length, boolean insideBlock) throws JavaModelException {
 		//IProgressMonitor pm = new NullProgressMonitor();
 		ICompilationUnit wc = icu.getWorkingCopy(pm);

@@ -66,7 +66,7 @@ public class EmrRecommender {
 		}
 		
 		if (this.goldset != null) {
-			String id = methodDeclaration.resolveBinding().getDeclaringClass().getName() + " " + methodDeclaration.getName();
+			String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
 			System.out.print(id + ": ");
 			boolean found = false;
 			int i = 0;
