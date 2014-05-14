@@ -2,11 +2,11 @@ package br.ufmg.dcc.labsoft.jextract.evaluation;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
@@ -27,14 +27,22 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BooleanLiteral;
+import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
+import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractTempRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
@@ -57,6 +65,8 @@ public class ProjectInliner {
 	private int methodsAnalysed = 0;
 	private int methodsInlined = 0;
 	private IProgressMonitor pm = new NullProgressMonitor();
+	
+	private Random random = new Random(283746L);
 
 	public ProjectInliner() {
 		this.mMap = new HashMap<String, MethodData>();
@@ -130,18 +140,19 @@ public class ProjectInliner {
 
 	private void applyBestInline(ICompilationUnit icu, String mKey) {
 		List<MethodInvocationCandidate> list = findMethodInvocations(icu, mKey);
-		Collections.sort(list, new Comparator<MethodInvocationCandidate>() {
-			@Override
-			public int compare(MethodInvocationCandidate o1, MethodInvocationCandidate o2) {
-				if (o1.isSameClass() && !o2.isSameClass()) {
-					return 1;
-				}
-				if (!o1.isSameClass() && o2.isSameClass()) {
-					return -1;
-				}
-				return -(o1.getSize() - o2.getSize());
-			}
-		});
+//		Collections.sort(list, new Comparator<MethodInvocationCandidate>() {
+//			@Override
+//			public int compare(MethodInvocationCandidate o1, MethodInvocationCandidate o2) {
+//				if (o1.isSameClass() && !o2.isSameClass()) {
+//					return 1;
+//				}
+//				if (!o1.isSameClass() && o2.isSameClass()) {
+//					return -1;
+//				}
+//				return -(o1.getSize() - o2.getSize());
+//			}
+//		});
+		Collections.shuffle(list, this.random);
 		
 		for (MethodInvocationCandidate mic : list) {
 			boolean applied = applyInlineMethod(icu, mic);
@@ -184,7 +195,12 @@ public class ProjectInliner {
 		methodDeclaration.accept(counter);
 		int size = counter.getCount();
 		
-		this.mMap.put(mKey, new MethodData(size));
+		Type returnType = methodDeclaration.getReturnType2();
+		
+		boolean voidMethod = returnType instanceof PrimitiveType &&
+				((PrimitiveType) returnType).getPrimitiveTypeCode() == PrimitiveType.VOID;
+		
+		this.mMap.put(mKey, new MethodData(size, methodDeclaration.parameters().size(), voidMethod));
 	}
 
 	private void extractEmr(List<ExtractMethodRecomendation> emrList, ICompilationUnit icu, CompilationUnit cu, String mKey) throws JavaModelException {
@@ -303,10 +319,10 @@ public class ProjectInliner {
 		if (invokedData.size < this.minSize || callerData.size < this.minSize) {
 			return false;
 		}
-//		double ratio = ((double) invokedData.size) / callerData.size;
-//		if (ratio > 2.0) {
-//			return false;
-//		}
+		double ratio = ((double) invokedData.size) / callerData.size;
+		if (ratio > 2.0) {
+			return false;
+		}
 //		if (ratio < 0.25) {
 //			return false;
 //		}
@@ -333,7 +349,10 @@ public class ProjectInliner {
 	
 	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
 		try {
-			while (this.extractArgsToVars(icu, mic));
+			int inlinedVars = 0;
+			while (this.extractArgsToVars(icu, mic, inlinedVars)) {
+				inlinedVars++;
+			}
 			
 			CompilationUnit cu = this.compile(icu, true);
 			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
@@ -376,7 +395,7 @@ public class ProjectInliner {
 					workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
 					workingCopy.commitWorkingCopy(false, this.pm);
 					workingCopy.discardWorkingCopy();
-					System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
+					//System.out.println(String.format("ERROR inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				} else {
 					workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
 					workingCopy.commitWorkingCopy(false, this.pm);
@@ -404,15 +423,24 @@ public class ProjectInliner {
 		}
 	}
 
-	private boolean extractArgsToVars(ICompilationUnit icu, MethodInvocationCandidate mic) throws CoreException {
+	private boolean extractArgsToVars(ICompilationUnit icu, MethodInvocationCandidate mic, int varI) throws CoreException {
 		CompilationUnit cu = this.compile(icu, true);
 		MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
 		List<ASTNode> args = invocation.arguments();
 		for (ASTNode arg : args) {
-			if (!(arg instanceof SimpleName)) {
+			boolean simpleArg = (
+				arg instanceof StringLiteral ||
+				arg instanceof NumberLiteral ||
+				arg instanceof CharacterLiteral ||
+				arg instanceof BooleanLiteral ||
+				arg instanceof NullLiteral ||
+				arg instanceof ThisExpression ||
+				arg instanceof SimpleName
+			);
+			if (!simpleArg) {
 				ExtractTempRefactoring refactoring = new ExtractTempRefactoring(icu, arg.getStartPosition(), arg.getLength());
 				refactoring.setDeclareFinal(true);
-				refactoring.setTempName("v" + System.currentTimeMillis()); 
+				refactoring.setTempName("tmp" + (varI + 1)); 
 				if (refactoring.checkAllConditions(this.pm).isOK()) {
 					Change change = refactoring.createChange(this.pm);
 					change.perform(this.pm);

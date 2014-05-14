@@ -3,8 +3,12 @@ package br.ufmg.dcc.labsoft.jextract.evaluation;
 public class MethodData {
 
 	final int size;
-	public MethodData(int size) {
+	final int numberOfArguments;
+	final boolean voidMethod;
+	public MethodData(int size, int numberOfArguments, boolean voidMethod) {
 		super();
 		this.size = size;
+		this.numberOfArguments = numberOfArguments;
+		this.voidMethod = voidMethod;
 	}
 }
