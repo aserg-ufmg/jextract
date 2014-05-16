@@ -337,12 +337,12 @@ public class ProjectInliner {
 			return false;
 		}
 		double ratio = ((double) invokedData.size) / callerData.size;
-		if (ratio > 2.0) {
+		if (ratio > 1.0) {
 			return false;
 		}
-//		if (ratio < 0.25) {
-//			return false;
-//		}
+		if (ratio < 0.1) {
+			return false;
+		}
 		
 		if (this.modifiedMethods.contains(invokedMethod.getKey())) {
 			return false;
