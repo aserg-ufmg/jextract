@@ -12,8 +12,8 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
-import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
@@ -27,8 +27,9 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 	}
 
 	@Override
-	void handleAction(IAction action, IMethod method) throws Exception {
+	void handleAction(IAction action, List<IMethod> methods) throws Exception {
 		// MessageDialog.openInformation(shell, "JExtract", actionId);
+		IMethod method = methods.get(0);
 		IProject project = method.getJavaProject().getProject();
 
 		List<ExtractMethodRecomendation> recomendations;

@@ -3,6 +3,7 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -44,13 +45,13 @@ public class EmrRecommender {
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
 		LinkedList<ExtractMethodRecomendation> result = new LinkedList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
-		Utils.sort(recomendations, EmrScoringFn.X_KUL_TVM, false);
+		Utils.sort(recomendations, EmrScoringFn.SCORE, false);
 		
 		final int maxPerMethod = this.settings.getMaxPerMethod();
 		final Double minScore = this.settings.getMinScore();
 		for (ExtractMethodRecomendation recommendation : recomendations) {
 			ExtractionSlice slice = recommendation.getSlice();
-			boolean greaterEqualMinScore = EmrScoringFn.X_KUL_TVM.score(recommendation) >= minScore;
+			boolean greaterEqualMinScore = EmrScoringFn.SCORE.score(recommendation) >= minScore;
 			if (!greaterEqualMinScore) {
 				continue;
 			}
@@ -178,9 +179,21 @@ public class EmrRecommender {
 		return 1.0;
 	}
 
-	public void printReport() {
+	public void printReport(IProject project) {
 	    if (this.goldset != null) {
 	    	System.out.println("----------------------------");
+	    	System.out.println(project.getName());
+	    	System.out.println("----------------------------");
+	    	System.out.print("total:     ");
+	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
+	    		System.out.printf("%05d ", this.totalAt[i]);
+	    	}
+	    	System.out.println();
+	    	System.out.print("correct:   ");
+	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
+	    		System.out.printf("%05d ", this.foundAt[i]);
+	    	}
+	    	System.out.println();
 	    	System.out.print("precision: ");
 	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
 				double precision = ((double) this.foundAt[i]) / this.totalAt[i];
@@ -197,35 +210,4 @@ public class EmrRecommender {
 	    }
     }
 
-	/*
-	private void reorder(AstNode node) {
-		// creation of a Document
-		   ICompilationUnit cu = ... ; // content is "public class X {\n}"
-		   String source = cu.getSource();
-		   Document document= new Document(source);
-
-		   // creation of DOM/AST from a ICompilationUnit
-		   ASTParser parser = ASTParser.newParser(AST.JLS3);
-		   parser.setSource(cu);
-		   CompilationUnit astRoot = (CompilationUnit) parser.createAST(null);
-
-		   // creation of ASTRewrite
-		   ASTRewrite rewrite = ASTRewrite.create(astRoot.getAST());
-
-		   // description of the change
-		   SimpleName oldName = ((TypeDeclaration)astRoot.types().get(0)).getName();
-		   SimpleName newName = astRoot.getAST().newSimpleName("Y");
-		   rewrite.replace(oldName, newName, null);
-
-		   // computation of the text edits
-		   TextEdit edits = rewrite.rewriteAST(document, cu.getJavaProject().getOptions(true));
-
-		   // computation of the new source code
-		   edits.apply(document);
-		   String newSource = document.get();
-
-		   // update of the compilation unit
-		   cu.getBuffer().setContents(newSource);
-	}
-	*/
 }

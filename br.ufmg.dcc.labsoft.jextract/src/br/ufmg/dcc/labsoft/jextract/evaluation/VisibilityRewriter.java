@@ -9,6 +9,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -43,6 +44,11 @@ public class VisibilityRewriter extends ASTVisitor {
 			public boolean visit(MethodDeclaration method) {
 				changeModifiersToPublic(cu, method.modifiers());
 				return true;
+			}
+			@Override
+			public boolean visit(EnumDeclaration node) {
+			    // Não mexer na visibilidade de enums
+			    return false;
 			}
 		});
 

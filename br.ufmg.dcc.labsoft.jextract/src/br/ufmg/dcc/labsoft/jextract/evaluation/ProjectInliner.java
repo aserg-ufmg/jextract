@@ -48,6 +48,7 @@ import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
 import org.eclipse.ltk.core.refactoring.Change;
 
+import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
@@ -95,9 +96,11 @@ public class ProjectInliner {
 			}
 		}
 		System.out.println(String.format("%d methods analysed, %d methods inlined", methodsAnalysed, methodsInlined));
+		
+		this.extractGoldSet(project);
 	}
 
-	public List<ExtractMethodRecomendation> extractGoldSet(IProject project) throws CoreException {
+	public void extractGoldSet(IProject project) throws CoreException {
 		final List<ExtractMethodRecomendation> emrList = new ArrayList<ExtractMethodRecomendation>();
 		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
 		for (ICompilationUnit icu : files) {
@@ -107,7 +110,8 @@ public class ProjectInliner {
 				this.extractEmr(emrList, icu, cu, mKey);
 			}
 		}
-		return emrList;
+		EmrFileExporter exporter = new EmrFileExporter(emrList, project.getLocation().toString() + "/goldset.txt");
+		exporter.export();
 	}
 	
 	private Iterable<ICompilationUnit> findCandidateFiles(IProject project) throws CoreException {
@@ -116,7 +120,13 @@ public class ProjectInliner {
 			@Override
 			public boolean visit(IResource resource) throws CoreException {
 				if (resource instanceof IFile && resource.getName().endsWith(".java")) {
-					files.add(((ICompilationUnit) JavaCore.create((IFile) resource)));
+					ICompilationUnit iCompilationUnit = (ICompilationUnit) JavaCore.create((IFile) resource);
+					try {
+						iCompilationUnit.getSource();
+						files.add(iCompilationUnit);
+					} catch (Exception e) {
+						// Se não é possível ler source ignora arquivo.
+					}
 				}
 				return true;
 			}
@@ -190,7 +200,7 @@ public class ProjectInliner {
 
 
 	private void registerMethod(CompilationUnit cu, String mKey) {
-		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
 		StatementsCountVisitor counter = new StatementsCountVisitor();
 		methodDeclaration.accept(counter);
 		int size = counter.getCount();
@@ -201,10 +211,13 @@ public class ProjectInliner {
 				((PrimitiveType) returnType).getPrimitiveTypeCode() == PrimitiveType.VOID;
 		
 		this.mMap.put(mKey, new MethodData(size, methodDeclaration.parameters().size(), voidMethod));
+		if (methodDeclaration.toString().indexOf(MARKER_CLOSE) != -1) {
+			this.modifiedMethods.add(mKey);
+		}
 	}
 
 	private void extractEmr(List<ExtractMethodRecomendation> emrList, ICompilationUnit icu, CompilationUnit cu, String mKey) throws JavaModelException {
-		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
 		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
 		final String methodSignature = methodBinding.toString();
 		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
@@ -249,7 +262,7 @@ public class ProjectInliner {
 		final List<MethodInvocationCandidate> invocations = new ArrayList<MethodInvocationCandidate>();
 		
 		CompilationUnit cu = this.compile(icu, true);
-		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
 		if (!this.isValid(mKey, methodDeclaration)) {
 			return invocations;
 		}
@@ -290,12 +303,16 @@ public class ProjectInliner {
 	}
 	
 	private MethodInvocation findMethodInvocationNode(CompilationUnit cu, String invokerKey, String invokedKey, int position) {
-		return this.findMethodInvocationNodes(cu, invokerKey).get(invokedKey).get(position);
+		List<MethodInvocation> list = this.findMethodInvocationNodes(cu, invokerKey).get(invokedKey);
+		if (position >= list.size()) {
+			throw new IllegalArgumentException(String.format("Invocation #%d of %s not found on %s", position, invokedKey, invokerKey));
+		}
+		return list.get(position);
 	}
 
 	private Map<String, List<MethodInvocation>> findMethodInvocationNodes(CompilationUnit cu, String mKey) {
 		final Map<String, List<MethodInvocation>> invocations = new HashMap<String, List<MethodInvocation>>();
-		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
 		methodDeclaration.accept(new ASTVisitor() {
 			public boolean visit(MethodInvocation node) {
 				final IMethodBinding invokedMethod = node.resolveMethodBinding();
@@ -349,6 +366,8 @@ public class ProjectInliner {
 	
 	private boolean applyInlineMethod(ICompilationUnit icu, MethodInvocationCandidate mic) {
 		try {
+			final String backup = icu.getSource();
+			
 			int inlinedVars = 0;
 			while (this.extractArgsToVars(icu, mic, inlinedVars)) {
 				inlinedVars++;
@@ -363,8 +382,6 @@ public class ProjectInliner {
 			Statement enclosingStatement = findEnclosingStatement(invocation);
 			ASTNode parent = enclosingStatement.getParent();
 			boolean insideBlock = parent instanceof Block || parent instanceof SwitchStatement;
-
-			final String backup = icu.getSource();
 			
 			int markerStart = enclosingStatement.getStartPosition();
 			int markerOffset = this.normalizeAndinsertEndMarker(icu, markerStart, enclosingStatement.getLength(), insideBlock);
@@ -440,7 +457,8 @@ public class ProjectInliner {
 			if (!simpleArg) {
 				ExtractTempRefactoring refactoring = new ExtractTempRefactoring(icu, arg.getStartPosition(), arg.getLength());
 				refactoring.setDeclareFinal(true);
-				refactoring.setTempName("tmp" + (varI + 1)); 
+				refactoring.setTempName("tmp" + (varI + 1));
+				refactoring.setReplaceAllOccurrences(false);
 				if (refactoring.checkAllConditions(this.pm).isOK()) {
 					Change change = refactoring.createChange(this.pm);
 					change.perform(this.pm);
@@ -505,4 +523,11 @@ public class ProjectInliner {
 		return parent;
 	}
 	
+	private MethodDeclaration findMethodDeclaration(CompilationUnit cu, String mKey) {
+		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(mKey);
+		if (methodDeclaration == null) {
+			throw new IllegalArgumentException(String.format("Method %s not found", mKey));
+		}
+		return methodDeclaration;
+	}
 }

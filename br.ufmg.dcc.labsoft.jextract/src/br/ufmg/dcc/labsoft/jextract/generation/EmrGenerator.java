@@ -70,7 +70,7 @@ public class EmrGenerator {
 				return true;
 			}
 		});
-		this.recommender.printReport();
+		this.recommender.printReport(project);
 	}
 
 	public void generateRecomendations(IMethod method) throws Exception {
@@ -167,7 +167,7 @@ public class EmrGenerator {
 			return;
 		}
 		int newSize = this.selected.getTotalSize() + this.block.get(i).getTotalSize();
-		if ((this.model.getTotalSize() - newSize) < this.settings.getMinSize()) {
+		if ((this.model.getTotalSize() - newSize) < this.settings.getMinMethodSize()) {
 			return;
 		}
 		if (!this.canBePlaced(i, Placement.INSIDE)) {
@@ -198,7 +198,7 @@ public class EmrGenerator {
 	}
 	
 	private void end() {
-		if (selected.getTotalSize() < this.settings.getMinSize()) {
+		if (selected.getTotalSize() < this.settings.getMinExtractedSize()) {
 			return;
     	}
 		this.handleSlice(model, block, selected);

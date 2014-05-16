@@ -105,7 +105,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 //		addColumnDuplicatedSize();
 		
 		addColumnScore(EmrScoringFn.KUL_TVM).getColumn();
-		addColumnScore(EmrScoringFn.X_KUL_TVM).getColumn();
+		addColumnScore(EmrScoringFn.SCORE).getColumn();
 //		addColumnScore(EmrScoringFn.PSC_TVM).getColumn();
 //		addColumnScore(EmrScoringFn.PJACD_T).getColumn();
 //		addColumnScore(EmrScoringFn.PKULD_T).getColumn();

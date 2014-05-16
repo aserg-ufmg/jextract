@@ -15,7 +15,8 @@ import org.eclipse.swt.widgets.Text;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 
 public class EmrSettingsDialog extends Dialog {
-	private Text txtMinSize;
+	private Text txtMinMethodSize;
+	private Text txtMinExtractedSize;
 	private Text txtMaxPerMethod;
 	private Text txtMaxFragments;
 	private Text txtPenalty;
@@ -35,7 +36,8 @@ public class EmrSettingsDialog extends Dialog {
 		layout.marginLeft = 10;
 		container.setLayout(layout);
 
-		this.txtMinSize = this.createTextField(container, "Minimum extracted statements:", this.settings.getMinSize().toString());
+		this.txtMinMethodSize = this.createTextField(container, "Minimum method statements:", this.settings.getMinMethodSize().toString());
+		this.txtMinExtractedSize = this.createTextField(container, "Minimum extracted statements:", this.settings.getMinExtractedSize().toString());
 		this.txtMaxPerMethod = this.createTextField(container, "Maximum recommendations per method:", this.settings.getMaxPerMethod().toString());
 		this.txtMaxFragments = this.createTextField(container, "Maximum extraction fragments:", this.settings.getMaxFragments().toString());
 		this.txtPenalty = this.createTextField(container, "Statement reordering penalty:", this.settings.getPenalty().toString());
@@ -70,7 +72,8 @@ public class EmrSettingsDialog extends Dialog {
 	@Override
 	protected void okPressed() {
 		try {
-			this.settings.setMinSize(Integer.valueOf(txtMinSize.getText()));
+			this.settings.setMinMethodSize(Integer.valueOf(txtMinMethodSize.getText()));
+			this.settings.setMinExtractedSize(Integer.valueOf(txtMinExtractedSize.getText()));
 			this.settings.setMaxPerMethod(Integer.valueOf(txtMaxPerMethod.getText()));
 			this.settings.setMaxFragments(Integer.valueOf(txtMaxFragments.getText()));
 			this.settings.setPenalty(Double.valueOf(txtPenalty.getText()));

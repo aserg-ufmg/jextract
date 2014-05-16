@@ -1,5 +1,8 @@
 package br.ufmg.dcc.labsoft.jextract.ui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -12,7 +15,7 @@ abstract class ObjectMenuAction<T> implements IObjectActionDelegate {
 
 	private Shell shell;
 
-	private T selected;
+	private List<T> selected;
 
 	private final Class<T> objectClass;
 
@@ -48,17 +51,19 @@ abstract class ObjectMenuAction<T> implements IObjectActionDelegate {
 
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
-		this.selected = null;
+		this.selected = new ArrayList<T>();
 		if (this.objectClass.isInstance(selection)) {
-			this.selected = this.objectClass.cast(selection);
+			this.selected.add(this.objectClass.cast(selection));
 		} else if (selection instanceof IStructuredSelection) {
-			Object firstElement = ((IStructuredSelection) selection).getFirstElement();
-			if (this.objectClass.isInstance(firstElement)) {
-				this.selected = this.objectClass.cast(firstElement);
+			IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+			for (Object element : structuredSelection.toList()) {
+				if (this.objectClass.isInstance(element)) {
+					this.selected.add(this.objectClass.cast(element));
+				}
 			}
 		}
 	}
 
-	abstract void handleAction(IAction action, T item) throws Exception;
+	abstract void handleAction(IAction action, List<T> item) throws Exception;
 
 }

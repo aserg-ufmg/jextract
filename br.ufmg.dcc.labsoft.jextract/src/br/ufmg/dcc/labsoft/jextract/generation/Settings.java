@@ -2,18 +2,27 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 public class Settings {
 
-	private Integer minSize = 3;
+	private Integer minMethodSize = 3;
+	private Integer minExtractedSize = 3;
 	private Integer maxPerMethod = 3;
 	private Integer maxFragments = 1;
 	private Double penalty = 0.0;
 	private Double minScore = 0.0;
 
-	public Integer getMinSize() {
-		return minSize;
+	public Integer getMinMethodSize() {
+		return this.minMethodSize;
 	}
 
-	public void setMinSize(int minSize) {
-		this.minSize = minSize;
+	public void setMinMethodSize(Integer minMethodSize) {
+		this.minMethodSize = minMethodSize;
+	}
+
+	public Integer getMinExtractedSize() {
+		return minExtractedSize;
+	}
+
+	public void setMinExtractedSize(int minExtractedSize) {
+		this.minExtractedSize = minExtractedSize;
 	}
 
 	public Integer getMaxPerMethod() {
