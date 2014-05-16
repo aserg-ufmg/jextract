@@ -79,9 +79,6 @@ public class ProjectInliner {
 		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
 		for (ICompilationUnit icu : files) {
 			rewriter.rewrite(icu);
-		}
-
-		for (ICompilationUnit icu : files) {
 			CompilationUnit cu = this.compile(icu, true);
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
@@ -139,8 +136,11 @@ public class ProjectInliner {
 		CompilationUnit cu = this.compile(icu, true);
 		cu.accept(new ASTVisitor() {
 			public boolean visit(MethodDeclaration node) {
-				if (!node.isConstructor()) {
-					methods.add(node.resolveBinding().getKey());
+				IMethodBinding binding = node.resolveBinding();
+				ITypeBinding declaringClass = binding.getDeclaringClass();
+				boolean insideAnonClass = declaringClass.isAnonymous();
+				if (!insideAnonClass && !node.isConstructor()) {
+					methods.add(binding.getKey());
 				}
 				return false;
 			}
