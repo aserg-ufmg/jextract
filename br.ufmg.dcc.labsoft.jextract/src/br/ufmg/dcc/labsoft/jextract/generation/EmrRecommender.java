@@ -68,7 +68,7 @@ public class EmrRecommender {
 		
 		if (this.goldset != null) {
 			String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
-			System.out.print(id + ": ");
+			//System.out.print(id + ": ");
 			boolean found = false;
 			int i = 0;
 			for (ExtractMethodRecomendation rec : result) {
@@ -76,7 +76,7 @@ public class EmrRecommender {
 					this.totalAt[j]++;
 				}
 				if (this.goldset.contains(rec)) {
-					System.out.println(i + 1);
+					//System.out.println(i + 1);
 					found = true;
 					for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
 						this.foundAt[j]++;
@@ -85,7 +85,7 @@ public class EmrRecommender {
 				i++;
 			}
 			if (!found) {
-				System.out.println("not found");
+				//System.out.println("not found");
 			}
 		}
 		
@@ -186,12 +186,12 @@ public class EmrRecommender {
 	    	System.out.println("----------------------------");
 	    	System.out.print("total:     ");
 	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-	    		System.out.printf("%05d ", this.totalAt[i]);
+	    		System.out.printf("%5d ", this.totalAt[i]);
 	    	}
 	    	System.out.println();
 	    	System.out.print("correct:   ");
 	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-	    		System.out.printf("%05d ", this.foundAt[i]);
+	    		System.out.printf("%5d ", this.foundAt[i]);
 	    	}
 	    	System.out.println();
 	    	System.out.print("precision: ");

@@ -92,9 +92,12 @@ public class EmrGenerator {
 		cu.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodDeclaration methodDeclaration) {
-				IMethod javaElement = (IMethod) methodDeclaration.resolveBinding().getJavaElement();
-				if (onlyThisMethod == null || onlyThisMethod.isSimilar(javaElement)) {
-					analyseMethod(src, methodDeclaration);
+				IMethodBinding binding = methodDeclaration.resolveBinding();
+				if (binding != null) {
+					IMethod javaElement = (IMethod) binding.getJavaElement();
+					if (onlyThisMethod == null || onlyThisMethod.isSimilar(javaElement)) {
+						analyseMethod(src, methodDeclaration);
+					}
 				}
 				return false;
 			}
