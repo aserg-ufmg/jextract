@@ -65,7 +65,12 @@ public class EmrGenerator {
 			public boolean visit(IResource resource) throws CoreException {
 				if (resource instanceof IFile && resource.getName().endsWith(".java")) {
 					ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
-					analyseMethods(unit, null);
+					try {
+						unit.getSource();
+						analyseMethods(unit, null);
+					} catch (Exception e) {
+						// ignora arquivo se não conseguiu pegar o source
+					}
 				}
 				return true;
 			}
