@@ -40,7 +40,7 @@ public class BlockBasedPdg {
 			}
 		}
 		
-		
+		/*
 		// this is the code that generates the control flow graph and program
 		// dependence graph of the method
 		MethodObject methodObject = new MethodObject(methodDeclaration);
@@ -77,6 +77,7 @@ public class BlockBasedPdg {
 				}
 			}
 		}
+		*/
 		
 		for (int block = 0; block < this.deps.length; block++) {
 			List<? extends StatementModel> children = blocks.get(block).getChildren();

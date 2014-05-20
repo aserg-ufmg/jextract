@@ -1,21 +1,16 @@
 package br.ufmg.dcc.labsoft.jextract.ui;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 
 import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
 public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 
@@ -28,47 +23,24 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 
 	@Override
 	void handleAction(IAction action, List<IMethod> methods) throws Exception {
-		// MessageDialog.openInformation(shell, "JExtract", actionId);
 		IMethod method = methods.get(0);
 		IProject project = method.getJavaProject().getProject();
 
-		List<ExtractMethodRecomendation> recomendations;
 		String actionId = action.getId();
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.methodmenu.findEmr")) {
-			recomendations = findEmr(method);
-		} else {
-			recomendations = new ArrayList<ExtractMethodRecomendation>();
-		}
-
-		// Sort the recomendations.
-		JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, false);
-		analyser.analyseMethod(method);
-
-		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage
-		        .showView("br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView");
-		view.setRecomendations(recomendations, project);
-
-		if (recomendations.isEmpty()) {
-			MessageDialog.openInformation(this.getShell(), "JExtract", "No recomendations found.");
+			findEmr(project, method);
 		}
 	}
 
-	private List<ExtractMethodRecomendation> findEmr(IMethod method) throws Exception {
+	private void findEmr(IProject project, IMethod method) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			Settings settings = dialog.getSettings();
-			// int k = dialog.getFirstK();
-
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			EmrGenerator analyser = new EmrGenerator(recomendations, settings);
 			analyser.generateRecomendations(method);
-
-			// List<ExtractMethodRecomendation> filtered =
-			// Utils.filterSameMethod(recomendations, k);
-			return recomendations;
+			this.showResultView(recomendations, project, settings);
 		}
-		return Collections.emptyList();
 	}
 
 }

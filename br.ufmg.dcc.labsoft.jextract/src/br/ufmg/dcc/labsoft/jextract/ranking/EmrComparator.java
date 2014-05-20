@@ -4,11 +4,9 @@ import java.util.Comparator;
 
 public class EmrComparator implements Comparator<ExtractMethodRecomendation> {
 
-	private final EmrScoringFn scoringFn;
 	private boolean groupByMethod;
 	
-	public EmrComparator(EmrScoringFn scoringFn, boolean groupByMethod) {
-		this.scoringFn = scoringFn;
+	public EmrComparator(boolean groupByMethod) {
 		this.groupByMethod = groupByMethod;
 	}
 
@@ -31,7 +29,7 @@ public class EmrComparator implements Comparator<ExtractMethodRecomendation> {
 			}
 		}
 		// Sort by score
-		int compR = - Double.compare(this.scoringFn.score(o1), this.scoringFn.score(o2));
+		int compR = - Double.compare(o1.getScore(), o2.getScore());
 		// second by safeness
 		compR = compR == 0 ? -(o1.getSafeness() - o2.getSafeness()) : compR;
 		// third by id

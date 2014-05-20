@@ -51,7 +51,7 @@ public class EmrGenerator {
 		this.settings = settings;
 		this.recomendations = recomendations;
 		this.recommender = new EmrRecommender(settings);
-		this.scoringFn = new EmrScoringFunction(settings);
+		this.scoringFn = EmrScoringFunction.getInstance(settings);
 	}
 
 	public void setGoldset(ProjectRelevantSet goldset) {
@@ -67,10 +67,11 @@ public class EmrGenerator {
 					ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
 					try {
 						unit.getSource();
-						analyseMethods(unit, null);
 					} catch (Exception e) {
+						return true;
 						// ignora arquivo se não conseguiu pegar o source
 					}
+					analyseMethods(unit, null);
 				}
 				return true;
 			}
@@ -127,6 +128,7 @@ public class EmrGenerator {
 		recomendation.setDuplicatedSize(0);
 		recomendation.setExtractedSize(totalSize);
 		recomendation.setSourceFile(model.getCompilationUnit());
+		recomendation.setMethodBindingKey(model.getAstNode().resolveBinding().getKey());
 		recomendation.setOriginalSize(model.getTotalSize());
 		recomendation.setReorderedSize(reorderedSize);
 
@@ -256,7 +258,7 @@ public class EmrGenerator {
 		if (!frags.isEmpty()) {
 			Fragment[] fragmentsArray = frags.toArray(new Fragment[frags.size()]);
 			ExtractMethodRecomendation rec = this.addRecomendation(model, totalSize, selected.getReorderedStatements(), fragmentsArray);
-			ScoreResult scoreResult = this.scoringFn.computeScore(rec.getSlice(), selected);
+			ScoreResult scoreResult = this.scoringFn.computeScore(rec, selected);
 			rec.setScore(scoreResult.getScore());
 			rec.setExplanation(scoreResult.getExplanation());
 		}

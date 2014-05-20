@@ -1,16 +1,12 @@
 package br.ufmg.dcc.labsoft.jextract.ui;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
@@ -18,7 +14,6 @@ import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ranking.JavaProjectAnalyser;
 
 public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
@@ -28,7 +23,6 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 	@Override
 	void handleAction(IAction action, List<IProject> projects) throws Exception {
-		// MessageDialog.openInformation(shell, "JExtract", actionId);
 		String actionId = action.getId();
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.inlineMethods")) {
 			for (IProject project : projects) {
@@ -48,85 +42,54 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			evaluateEmr(projects);
-			MessageDialog.openInformation(this.getShell(), "JExtract", "Evaluation complete.");
 			return;
 		}
 		
 		IProject project = projects.get(0);
-		List<ExtractMethodRecomendation> recomendations;
-		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.importEmr")) {
-			recomendations = importFromFile(project);
-			JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, false);
-			analyser.analyseProject(project);
-		} else if (actionId.equals("br.ufmg.dcc.labsoft.jextract.showGoldset")) {
+		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.showGoldset")) {
 			EmrFileReader reader = new EmrFileReader();
-			recomendations = reader.read(project.getLocation().toString() + "/goldset.txt");
-			// Sort the recomendations.
-			JavaProjectAnalyser analyser = new JavaProjectAnalyser(recomendations, true);
-			analyser.analyseProject(project);
-		} else if (actionId.equals("br.ufmg.dcc.labsoft.jextract.findEmr")) {
-			recomendations = findEmr(project, null);
-		} else {
-			recomendations = Collections.emptyList();
+			List<ExtractMethodRecomendation> recomendations = reader.read(project.getLocation().toString() + "/goldset.txt");
+			//fillEmrData(recomendations, project);
+			showResultView(recomendations, project, new Settings());
+			return;
 		}
 
-		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage
-		        .showView("br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView");
-		view.setRecomendations(recomendations, project);
-
-		if (recomendations.isEmpty()) {
-			MessageDialog.openInformation(this.getShell(), "JExtract", "No recomendations found.");
+		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.findEmr")) {
+			findEmr(project, null);
+			return;
 		}
 	}
 
-	private List<ExtractMethodRecomendation> importFromFile(IProject project) throws Exception {
-		FileDialog fileDialog = new FileDialog(this.getShell());
-		fileDialog.setText("Select File");
-		// Set filter on .txt files
-		fileDialog.setFilterExtensions(new String[] { "*.txt" });
-		// Put in a readable name for the filter
-		fileDialog.setFilterNames(new String[] { "Textfiles(*.txt)" });
-		// Open Dialog and save result of selection
-		String selected = fileDialog.open();
 
-		EmrFileReader reader = new EmrFileReader();
-		List<ExtractMethodRecomendation> recomendations = reader.read(selected);
-
-		return recomendations;
-	}
-
-	private List<ExtractMethodRecomendation> findEmr(IProject project, ProjectRelevantSet goldset) throws Exception {
+	private void findEmr(IProject project, ProjectRelevantSet goldset) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			Settings settings = dialog.getSettings();
-			// int k = dialog.getFirstK();
-
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			EmrGenerator analyser = new EmrGenerator(recomendations, settings);
-			analyser.setGoldset(goldset);
-			analyser.generateRecomendations(project);
-
-			// List<ExtractMethodRecomendation> filtered =
-			// Utils.filterSameMethod(recomendations, k);
-			return recomendations;
+			EmrGenerator generator = new EmrGenerator(recomendations, settings);
+			generator.setGoldset(goldset);
+			generator.generateRecomendations(project);
+			showResultView(recomendations, project, settings);
 		}
-
-		return Collections.emptyList();
 	}
 
 	private void evaluateEmr(List<IProject> projects) throws Exception {
+		List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
-			
+			Settings settings = dialog.getSettings();
 			for (IProject project : projects) {
 				ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
-				Settings settings = dialog.getSettings();
-				
-				List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-				EmrGenerator analyser = new EmrGenerator(recomendations, settings);
-				analyser.setGoldset(goldset);
-				analyser.generateRecomendations(project);
+				recomendations = new ArrayList<ExtractMethodRecomendation>();
+				EmrGenerator generator = new EmrGenerator(recomendations, settings);
+				generator.setGoldset(goldset);
+				generator.generateRecomendations(project);
+			}
+			
+			if (projects.size() == 1) {
+				showResultView(recomendations, projects.get(0), settings);
+			} else {
+				MessageDialog.openInformation(this.getShell(), "JExtract", "Evaluation complete.");
 			}
 			
 		}

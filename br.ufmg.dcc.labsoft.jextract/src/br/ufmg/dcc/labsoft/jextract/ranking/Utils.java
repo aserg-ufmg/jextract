@@ -9,15 +9,18 @@ import java.util.Map;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 public class Utils {
 
-	public static void sort(List<ExtractMethodRecomendation> recomendations, EmrScoringFn scoringFn, boolean groupByMethod) {
-		EmrComparator comparator = new EmrComparator(scoringFn, groupByMethod);
+	public static void sort(List<ExtractMethodRecomendation> recomendations, boolean groupByMethod) {
+		EmrComparator comparator = new EmrComparator(groupByMethod);
 		Collections.sort(recomendations, comparator);
 		for (int i = 0, len = recomendations.size(); i < len; i++) {
 			recomendations.get(i).setRank(i);
@@ -51,26 +54,6 @@ public class Utils {
 		sb.append("}\n");
 	}
 
-	public static String explain(SetsSimilarity ssimT, SetsSimilarity ssimV, SetsSimilarity ssimM) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("# Types:\n");
-		printSets(ssimT, sb);
-		sb.append("# Variables:\n");
-		printSets(ssimV, sb);
-		sb.append("# Modules:\n");
-		printSets(ssimM, sb);
-		return sb.toString();
-	}
-
-	private static void printSets(SetsSimilarity ssimT, StringBuilder sb) {
-		sb.append(String.format("a=%d ", ssimT.getA()));
-		Utils.asString(sb, ssimT.intersection);
-		sb.append(String.format("b=%d ", ssimT.getB()));
-		Utils.asString(sb, ssimT.set1);
-		sb.append(String.format("c=%d ", ssimT.getC()));
-		Utils.asString(sb, ssimT.set2);
-	}
-
 	public static Statement findEnclosingStatement(ASTNode astNode) {
 		ASTNode node = astNode;
 		while (node != null) {
@@ -92,4 +75,11 @@ public class Utils {
 		}
 	}
 
+	public static CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
+		ASTParser parser = ASTParser.newParser(AST.JLS4);
+		parser.setSource(icu);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setResolveBindings(resolveBindings);
+		return (CompilationUnit) parser.createAST(null);
+	}
 }

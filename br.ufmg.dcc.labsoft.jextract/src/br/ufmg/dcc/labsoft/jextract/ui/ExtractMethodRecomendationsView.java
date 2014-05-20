@@ -38,9 +38,9 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
+import br.ufmg.dcc.labsoft.jextract.generation.EmrScoringFunction;
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
-import br.ufmg.dcc.labsoft.jextract.ranking.EmrRankFileExporter;
-import br.ufmg.dcc.labsoft.jextract.ranking.EmrScoringFn;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
@@ -51,33 +51,33 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	public static final String ID = "br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView";
 
 	private TableViewer viewer;
-	private Action action1;
-	private Action action2;
-	private Action action3;
+	private Action actionExport;
 	private Action toggleGroupBy;
-	private Action doubleClickAction;
+	private Action actionHighlightCode;
+	private Action actionApplyRefactoring;
+	private Action actionExplainScore;
 	private List<ExtractMethodRecomendation> recomendations;
 	Listener sortListener;
 	private boolean groupByMethod = false;
+	private Settings settings;
 
+	
 	public ExtractMethodRecomendationsView() {
 		this.recomendations = Collections.emptyList();
 		
 		this.sortListener = new Listener() {
 			public void handleEvent(Event e) {
 				TableColumn column = (TableColumn) e.widget;
-				EmrScoringFn scoringFn = EmrScoringFn.valueOf(column.getText());
-				if (scoringFn != null) {
-					Utils.sort(recomendations, scoringFn, groupByMethod);
-				}
+				Utils.sort(recomendations, groupByMethod);
 				viewer.getTable().setSortColumn(column);
 				viewer.setInput(recomendations);
 			}
 		};
 	}
 
-	public void setRecomendations(List<ExtractMethodRecomendation> recomendations, IProject project) {
+	public void setRecomendations(List<ExtractMethodRecomendation> recomendations, IProject project, Settings settings) {
 		this.recomendations = recomendations;
+		this.settings = settings;
 		ProjectRelevantSet set = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
 		for (ExtractMethodRecomendation rec : recomendations) {
 			rec.setRelevant(set.contains(rec));
@@ -95,28 +95,15 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		viewer.getTable().setHeaderVisible(true);
 		
 		addColumnRank();
-		TableViewerColumn colId = addColumnId();
-		colId.getColumn().addListener(SWT.Selection, sortListener);
-		addColumnOk();
+		//TableViewerColumn colId = addColumnId();
+		//colId.getColumn().addListener(SWT.Selection, sortListener);
+		//addColumnOk();
 		addColumnClass();
 		addColumnMethodName();
 		addColumnOriginalSize().getColumn();
 		addColumnExtractedSize();
-//		addColumnDuplicatedSize();
 		
-		addColumnScore(EmrScoringFn.KUL_TVM).getColumn();
-		addColumnScore(EmrScoringFn.SCORE).getColumn();
-//		addColumnScore(EmrScoringFn.PSC_TVM).getColumn();
-//		addColumnScore(EmrScoringFn.PJACD_T).getColumn();
-//		addColumnScore(EmrScoringFn.PKULD_T).getColumn();
-//		addColumnScore(EmrScoringFn.PPSCD_T).getColumn();
-//		addColumnScore(EmrScoringFn.PJACD_T_PJACD_V).getColumn();
-//		addColumnScore(EmrScoringFn.PKULD_T_PKULD_V).getColumn();
-//		addColumnScore(EmrScoringFn.PPSCD_T_PPSCD_V).getColumn();
-//		addColumnScore(EmrScoringFn.BAL_JACD_T_JACD_V).getColumn();
-//		addColumnScore(EmrScoringFn.JACD_T).getColumn();
-//		addColumnScore(EmrScoringFn.P_T).getColumn();
-//		addColumnScore(EmrScoringFn.P_V).getColumn();
+		addColumnScore().getColumn();
 		addColumnExplanation();
 
 		makeActions();
@@ -171,7 +158,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	}
 
 	private TableViewerColumn addColumnOriginalSize() {
-		return addColumn("Original", new EmrTableColumnLabelProvider() {
+		return addColumn("Method Size", new EmrTableColumnLabelProvider() {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
 				return element.getOriginalSize() + "";
@@ -180,7 +167,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	}
 
 	private TableViewerColumn addColumnExtractedSize() {
-		return addColumn("Extracted", new EmrTableColumnLabelProvider() {
+		return addColumn("Extracted Size", new EmrTableColumnLabelProvider() {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
 				return element.getExtractedSize() + "";
@@ -197,11 +184,11 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		}, 100);
 	}
 
-	private TableViewerColumn addColumnScore(final EmrScoringFn scoringFn) {
-		TableViewerColumn col = addColumn(scoringFn.toString(), new EmrTableColumnLabelProvider() {
+	private TableViewerColumn addColumnScore() {
+		TableViewerColumn col = addColumn("Score", new EmrTableColumnLabelProvider() {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
-				return String.format("%s", Double.toString(scoringFn.score(element)));
+				return String.format("%s", Double.toString(element.getScore()));
 			}
 		}, 90);
 		col.getColumn().addListener(SWT.Selection, sortListener);
@@ -246,13 +233,15 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	}
 
 	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(action1);
+		manager.add(actionExplainScore);
 		manager.add(new Separator());
-		manager.add(action2);
+		manager.add(actionExport);
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
-		manager.add(action1);
+		manager.add(actionHighlightCode);
+		manager.add(actionApplyRefactoring);
+		manager.add(actionExplainScore);
 		//manager.add(action2);
 		manager.add(new Separator());
 		// Other plug-ins can contribute there actions here
@@ -260,49 +249,47 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	}
 	
 	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(action1);
-		manager.add(action2);
-		manager.add(action3);
-		manager.add(toggleGroupBy);
+		//manager.add(action1);
+		manager.add(actionExport);
+		//manager.add(toggleGroupBy);
 		manager.add(new Separator());
 	}
 
 	private void makeActions() {
-		action1 = new Action() {
+		actionExplainScore = new Action() {
 			public void run() {
 				ISelection selection = viewer.getSelection();
 				Object obj = ((IStructuredSelection)selection).getFirstElement();
 				showExplanation((ExtractMethodRecomendation) obj);
 			}
 		};
-		action1.setText("Show details");
-		action1.setToolTipText("Show details");
-		action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
-			getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
+		actionExplainScore.setText("Explain Score");
+		actionExplainScore.setToolTipText("Explain Score");
+		//action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
 		
-		action2 = new Action() {
+		actionExport = new Action() {
 			public void run() {
 				String outputPath = "E:/Danilo/Temp/out.txt";
 				new EmrFileExporter(recomendations, outputPath).export();
 				showMessage(String.format("Data saved at %s", outputPath));
 			}
 		};
-		action2.setText("Save to file");
-		action2.setToolTipText("Export results as a text file");
-		action2.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
+		actionExport.setText("Save to file");
+		actionExport.setToolTipText("Export results as a text file");
+		actionExport.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 				getImageDescriptor(ISharedImages.IMG_ETOOL_SAVEAS_EDIT));
 
-		action3 = new Action() {
-			public void run() {
-				String baseFolder = "E:/Danilo/Temp/";
-				EmrRankFileExporter.exportAll(recomendations, baseFolder);
-				showMessage(String.format("Data saved at %s", baseFolder));
-			}
-		};
-		action3.setText("Export all");
-		action3.setToolTipText("Export results for comparison");
-		action3.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
-				getImageDescriptor(ISharedImages.IMG_ETOOL_SAVEALL_EDIT));
+//		action3 = new Action() {
+//			public void run() {
+//				String baseFolder = "E:/Danilo/Temp/";
+//				EmrRankFileExporter.exportAll(recomendations, baseFolder);
+//				showMessage(String.format("Data saved at %s", baseFolder));
+//			}
+//		};
+//		action3.setText("Export all");
+//		action3.setToolTipText("Export results for comparison");
+//		action3.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
+//				getImageDescriptor(ISharedImages.IMG_ETOOL_SAVEALL_EDIT));
 		
 		toggleGroupBy = new Action("Toggle group by method", Action.AS_CHECK_BOX) {
 			public void run() {
@@ -313,19 +300,29 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		toggleGroupBy.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 				getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
 		
-		doubleClickAction = new Action() {
+		actionHighlightCode = new Action() {
 			public void run() {
 				ISelection selection = viewer.getSelection();
 				Object obj = ((IStructuredSelection)selection).getFirstElement();
 				showRefactoringDetails((ExtractMethodRecomendation) obj);
 			}
 		};
+		actionHighlightCode.setText("Highlight recommendation");
+		actionHighlightCode.setToolTipText("Highlight recommendation");
+
+		actionApplyRefactoring = new Action() {
+			public void run() {
+				// TODO
+			}
+		};
+		actionApplyRefactoring.setText("Apply Refactoring");
+		actionApplyRefactoring.setToolTipText("Apply Refactoring");
 	}
 
 	private void hookDoubleClickAction() {
 		viewer.addDoubleClickListener(new IDoubleClickListener() {
 			public void doubleClick(DoubleClickEvent event) {
-				doubleClickAction.run();
+				actionHighlightCode.run();
 			}
 		});
 	}
@@ -367,12 +364,12 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	}
 	
 	private void showExplanation(ExtractMethodRecomendation emr) {
-		showMessage(emr.getExplanationDetails());
+		String scoreDetails = EmrScoringFunction.getInstance(this.settings).getScoreDetails(emr);
+		showMessage(scoreDetails);
+		System.out.println(scoreDetails);
 	}
 	
-	/**
-	 * Passing the focus request to the viewer's control.
-	 */
+	@Override
 	public void setFocus() {
 		viewer.getControl().setFocus();
 	}

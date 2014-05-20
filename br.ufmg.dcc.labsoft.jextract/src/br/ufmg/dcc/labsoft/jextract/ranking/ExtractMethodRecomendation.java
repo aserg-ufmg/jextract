@@ -13,14 +13,9 @@ public class ExtractMethodRecomendation {
 	private int originalSize;
 	private int reorderedSize = 0;
 	final ExtractionSlice slice;
-	private SetsSimilarity ssimT;
-	private SetsSimilarity ssimV;
-	private SetsSimilarity ssimM;
-	private double pt = 0.0;
-	private double pv = 0.0;
-	private double pm = 0.0;
 //	private double ptv = 0.0;
 	private ICompilationUnit sourceFile;
+	private String methodBindingKey;
 	private boolean ok = false;
 	private boolean relevant = false;
 	private boolean similar = false;
@@ -46,6 +41,14 @@ public class ExtractMethodRecomendation {
 
 	public void setSourceFile(ICompilationUnit sourceFile) {
 		this.sourceFile = sourceFile;
+	}
+	
+	public String getMethodBindingKey() {
+		return this.methodBindingKey;
+	}
+
+	public void setMethodBindingKey(String methodBindingKey) {
+		this.methodBindingKey = methodBindingKey;
 	}
 
 	public ExtractionSlice getSlice() {
@@ -77,38 +80,17 @@ public class ExtractMethodRecomendation {
 		return this.ok;
 	}
 
-	public void setSsimT(SetsSimilarity ssimT) {
-		this.ssimT = ssimT;
-	}
-
-	public void setSsimV(SetsSimilarity ssimV) {
-		this.ssimV = ssimV;
-	}
-
-	public void setSsimM(SetsSimilarity ssimM) {
-		this.ssimM = ssimM;
-	}
-
 	public void setExplanation(String explanation) {
 		this.explanation = explanation;
 	}
 
 	public String getExplanation() {
-		if (this.explanation != null) {
-			return this.explanation;
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("Typ(a=%d, b=%d, c=%d)", this.ssimT.getA(), this.ssimT.getB(), this.ssimT.getC()));
-		sb.append(" | ");
-		sb.append(String.format("Var(a=%d, b=%d, c=%d)", this.ssimV.getA(), this.ssimV.getB(), this.ssimV.getC()));
-		sb.append(" | ");
-		sb.append(String.format("Mod(a=%d, b=%d, c=%d)", this.ssimM.getA(), this.ssimM.getB(), this.ssimM.getC()));
-		return sb.toString();
+		return this.explanation;
 	}
 
-	public String getExplanationDetails() {
-		return Utils.explain(this.ssimT, this.ssimV, this.ssimM);
-	}
+//	public String getExplanationDetails() {
+//		return Utils.explain(this.ssimT, this.ssimV, this.ssimM);
+//	}
 
 	public int getRank() {
 		return rank;
@@ -140,30 +122,6 @@ public class ExtractMethodRecomendation {
 
 	public void setReorderedSize(int reorderedSize) {
 		this.reorderedSize = reorderedSize;
-	}
-
-	public double getPt() {
-		return pt;
-	}
-
-	public void setPt(double pt) {
-		this.pt = pt;
-	}
-
-	public double getPv() {
-		return pv;
-	}
-
-	public void setPv(double pv) {
-		this.pv = pv;
-	}
-
-	public double getPm() {
-		return pm;
-	}
-	
-	public void setPm(double pm) {
-		this.pm = pm;
 	}
 
 //	public double getPtv() {
@@ -214,18 +172,6 @@ public class ExtractMethodRecomendation {
 
 	public void setAvailableInGoldSet(boolean availableInGoldSet) {
 		this.availableInGoldSet = availableInGoldSet;
-	}
-
-	public SetsSimilarity getSsimT() {
-		return ssimT;
-	}
-
-	public SetsSimilarity getSsimV() {
-		return ssimV;
-	}
-
-	public SetsSimilarity getSsimM() {
-		return ssimM;
 	}
 
 	public int getSafeness() {

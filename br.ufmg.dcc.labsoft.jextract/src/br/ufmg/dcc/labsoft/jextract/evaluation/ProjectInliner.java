@@ -22,9 +22,7 @@ import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.WorkingCopyOwner;
-import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BooleanLiteral;
@@ -79,7 +77,7 @@ public class ProjectInliner {
 		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
 		for (ICompilationUnit icu : files) {
 			rewriter.rewrite(icu);
-			CompilationUnit cu = this.compile(icu, true);
+			CompilationUnit cu = Utils.compile(icu, true);
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
 				this.registerMethod(cu, mKey);
@@ -101,7 +99,7 @@ public class ProjectInliner {
 		final List<ExtractMethodRecomendation> emrList = new ArrayList<ExtractMethodRecomendation>();
 		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
 		for (ICompilationUnit icu : files) {
-			CompilationUnit cu = this.compile(icu, true);
+			CompilationUnit cu = Utils.compile(icu, true);
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
 				this.extractEmr(emrList, icu, cu, mKey);
@@ -133,7 +131,7 @@ public class ProjectInliner {
 
 	private Iterable<String> findCandidateMethods(ICompilationUnit icu) {
 		final List<String> methods = new ArrayList<String>();
-		CompilationUnit cu = this.compile(icu, true);
+		CompilationUnit cu = Utils.compile(icu, true);
 		cu.accept(new ASTVisitor() {
 			public boolean visit(MethodDeclaration node) {
 				IMethodBinding binding = node.resolveBinding();
@@ -261,7 +259,7 @@ public class ProjectInliner {
 	private List<MethodInvocationCandidate> findMethodInvocations(final ICompilationUnit icu, final String mKey) {
 		final List<MethodInvocationCandidate> invocations = new ArrayList<MethodInvocationCandidate>();
 		
-		CompilationUnit cu = this.compile(icu, true);
+		CompilationUnit cu = Utils.compile(icu, true);
 		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
 		if (!this.isValid(mKey, methodDeclaration)) {
 			return invocations;
@@ -373,7 +371,7 @@ public class ProjectInliner {
 				inlinedVars++;
 			}
 			
-			CompilationUnit cu = this.compile(icu, true);
+			CompilationUnit cu = Utils.compile(icu, true);
 			MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
 			int start = invocation.getStartPosition();
 			int length = invocation.getLength();
@@ -388,7 +386,7 @@ public class ProjectInliner {
 
 			// Inline method
 			boolean success;
-			cu = this.compile(icu, true);
+			cu = Utils.compile(icu, true);
 			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, start + markerOffset, length);
 			refactoring.setDeleteSource(false);
 			refactoring.setCurrentMode(Mode.INLINE_SINGLE); // or INLINE SINGLE based on the user's intervention
@@ -441,7 +439,7 @@ public class ProjectInliner {
 	}
 
 	private boolean extractArgsToVars(ICompilationUnit icu, MethodInvocationCandidate mic, int varI) throws CoreException {
-		CompilationUnit cu = this.compile(icu, true);
+		CompilationUnit cu = Utils.compile(icu, true);
 		MethodInvocation invocation = this.findMethodInvocationNode(cu, mic.getInvoker(), mic.getInvoked(), mic.getInvocation());
 		List<ASTNode> args = invocation.arguments();
 		for (ASTNode arg : args) {
@@ -507,14 +505,6 @@ public class ProjectInliner {
 		wc.discardWorkingCopy();
 	}
 	
-	private CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(icu);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(resolveBindings);
-		return (CompilationUnit) parser.createAST(null);
-	}
-
 	private Statement findEnclosingStatement(ASTNode astNode) {
 		Statement parent = Utils.findEnclosingStatement(astNode); 
 		if (parent == null) {

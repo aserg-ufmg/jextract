@@ -5,19 +5,13 @@ import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
-import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
-import br.ufmg.dcc.labsoft.jextract.ranking.EmrScoringFn;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
-import br.ufmg.dcc.labsoft.jextract.ranking.SetsSimilarity;
 import br.ufmg.dcc.labsoft.jextract.ranking.StatementsSliceCountVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
@@ -45,13 +39,13 @@ public class EmrRecommender {
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
 		LinkedList<ExtractMethodRecomendation> result = new LinkedList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
-		Utils.sort(recomendations, EmrScoringFn.SCORE, false);
+		Utils.sort(recomendations, false);
 		
 		final int maxPerMethod = this.settings.getMaxPerMethod();
 		final Double minScore = this.settings.getMinScore();
 		for (ExtractMethodRecomendation recommendation : recomendations) {
 			ExtractionSlice slice = recommendation.getSlice();
-			boolean greaterEqualMinScore = EmrScoringFn.SCORE.score(recommendation) >= minScore;
+			boolean greaterEqualMinScore = recommendation.getScore() >= minScore;
 			if (!greaterEqualMinScore) {
 				continue;
 			}
@@ -111,72 +105,8 @@ public class EmrRecommender {
 			if (alternative.getSourceFile() == null) {
 				alternative.setSourceFile(src);
 			}
-
-			SetsSimilarity ssimT = this.computeSetsSimilarity(methodDeclaration, slice, true, false, false);
-			SetsSimilarity ssimV = this.computeSetsSimilarity(methodDeclaration, slice, false, true, false);
-			SetsSimilarity ssimM = this.computeSetsSimilarity(methodDeclaration, slice, false, false, true);
-			alternative.setSsimT(ssimT);
-			alternative.setSsimV(ssimV);
-			alternative.setSsimM(ssimM);
-
-			alternative.setPt(computeProb(methodDeclaration, slice, true, false, false, alternative));
-			alternative.setPv(computeProb(methodDeclaration, slice, false, true, false, alternative));
-			alternative.setPm(computeProb(methodDeclaration, slice, false, false, true, alternative));
+			alternative.setMethodBindingKey(methodBinding.getKey());
 		}
-	}
-
-	private SetsSimilarity computeSetsSimilarity(MethodDeclaration methodDeclaration,
-	        final ExtractionSlice slice, final boolean typeAccess, final boolean variableAccess,
-	        final boolean packageAccess) {
-		final SetsSimilarity ssim = new SetsSimilarity();
-		methodDeclaration.accept(new DependenciesAstVisitor(methodDeclaration.resolveBinding().getDeclaringClass()) {
-			@Override
-			public void onTypeAccess(ASTNode node, ITypeBinding binding) {
-				if (!typeAccess) {
-					return;
-				}
-				if (slice.belongsToMethod(node.getStartPosition())) {
-					ssim.addToSet1(binding.getKey());
-				}
-				if (slice.belongsToExtracted(node.getStartPosition())) {
-					ssim.addToSet2(binding.getKey());
-				}
-			}
-
-			@Override
-			public void onVariableAccess(ASTNode node, IVariableBinding binding) {
-				if (!variableAccess) {
-					return;
-				}
-				if (slice.belongsToMethod(node.getStartPosition())) {
-					ssim.addToSet1(binding.getKey());
-				}
-				if (slice.belongsToExtracted(node.getStartPosition())) {
-					ssim.addToSet2(binding.getKey());
-				}
-			}
-
-			@Override
-			public void onModuleAccess(ASTNode node, String packageName) {
-				if (!packageAccess) {
-					return;
-				}
-				if (slice.belongsToMethod(node.getStartPosition())) {
-					ssim.addToSet1(packageName);
-				}
-				if (slice.belongsToExtracted(node.getStartPosition())) {
-					ssim.addToSet2(packageName);
-				}
-			}
-		});
-		ssim.end();
-		return ssim;
-	}
-
-	private double computeProb(MethodDeclaration methodDeclaration, final ExtractionSlice slice,
-	        final boolean typeAccess, final boolean variableAccess, final boolean packageAccess,
-	        ExtractMethodRecomendation alternative) {
-		return 1.0;
 	}
 
 	public void printReport(IProject project) {

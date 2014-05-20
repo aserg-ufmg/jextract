@@ -17,13 +17,6 @@
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="1"
-               id="br.ufmg.dcc.labsoft.jextract.importEmr"
-               label="Import extract method opportunities"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="1"
                id="br.ufmg.dcc.labsoft.jextract.showGoldset"
                label="Show Oracle recomendations"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
