@@ -1,11 +1,11 @@
 package gr.uom.java.jdeodorant.refactoring.manipulators;
 
+import gr.uom.java.ast.decomposition.cfg.AbstractVariable;
 import gr.uom.java.ast.decomposition.cfg.BasicBlock;
 import gr.uom.java.ast.decomposition.cfg.PDGNode;
 import gr.uom.java.ast.decomposition.cfg.PDGObjectSliceUnion;
 import gr.uom.java.ast.decomposition.cfg.PDGSlice;
 import gr.uom.java.ast.decomposition.cfg.PDGSliceUnion;
-import gr.uom.java.ast.decomposition.cfg.AbstractVariable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -385,14 +385,42 @@ public class ASTSlice {
 	}
 
 	public String toString() {
+//		int numberOfSliceStatements = getSliceStatements().size();
+//		int numberOfRemovableStatements = getRemovableStatements().size();
+//		int numberOfDuplicatedStatements = numberOfSliceStatements - numberOfRemovableStatements;
+//		return getSourceTypeDeclaration().resolveBinding().getQualifiedName() + "\t" +
+//		getSourceMethodDeclaration().resolveBinding().toString() + "\t" +
+//		getLocalVariableCriterion().getName().getIdentifier() + "\t" +
+//		"B" + getBoundaryBlock().getId() + "\t" +
+//		numberOfDuplicatedStatements + "/" + numberOfSliceStatements;
 		int numberOfSliceStatements = getSliceStatements().size();
 		int numberOfRemovableStatements = getRemovableStatements().size();
 		int numberOfDuplicatedStatements = numberOfSliceStatements - numberOfRemovableStatements;
-		return getSourceTypeDeclaration().resolveBinding().getQualifiedName() + "\t" +
-		getSourceMethodDeclaration().resolveBinding().toString() + "\t" +
-		getLocalVariableCriterion().getName().getIdentifier() + "\t" +
-		"B" + getBoundaryBlock().getId() + "\t" +
-		numberOfDuplicatedStatements + "/" + numberOfSliceStatements;
+
+		StringBuilder sb = new StringBuilder();
+		Object[] maps = this.getHighlightPositions();
+		Map<Position, String> annotationMap = (Map<Position, String>) maps[0];
+		Map<Position, Boolean> duplicationMap = (Map<Position, Boolean>) maps[1];
+		for(Map.Entry<Position, String> entry : annotationMap.entrySet()) {
+			Position position = entry.getKey();
+			Boolean duplication = duplicationMap.get(position);
+			if (duplication) {
+				sb.append('d');
+			} else {
+				sb.append('e');
+			}
+			sb.append(position.getOffset());
+			sb.append(':');
+			sb.append(position.getLength());
+			sb.append(';');
+		}
+
+		return iFile.getProjectRelativePath() + "\t" +
+		getSourceMethodDeclaration().resolveBinding().getKey() + "\t" +
+		//getLocalVariableCriterion().getName().getIdentifier() + "\t" +
+		//"B" + getBoundaryBlock().getId() + "\t" +
+		//numberOfDuplicatedStatements + "/" + numberOfSliceStatements + "\t" +
+		sb.toString();
 	}
 
 	public Integer getUserRate() {

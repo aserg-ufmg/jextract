@@ -9,13 +9,13 @@ import java.util.Map;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+
+import br.ufmg.dcc.labsoft.jextract.codeanalysis.AstParser;
 
 public class Utils {
 
@@ -76,10 +76,7 @@ public class Utils {
 	}
 
 	public static CompilationUnit compile(ICompilationUnit icu, boolean resolveBindings) {
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(icu);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(resolveBindings);
-		return (CompilationUnit) parser.createAST(null);
+		return new AstParser().getCompilationUnit(icu, resolveBindings);
 	}
+
 }

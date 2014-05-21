@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.Statement;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
+import br.ufmg.dcc.labsoft.jextract.model.Placement;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
 import br.ufmg.dcc.labsoft.jextract.model.impl.MethodModelBuilder;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;

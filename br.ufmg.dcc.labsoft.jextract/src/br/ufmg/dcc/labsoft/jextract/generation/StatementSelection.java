@@ -6,6 +6,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
+import br.ufmg.dcc.labsoft.jextract.model.Placement;
 
 public class StatementSelection {
 	private final MethodModel methodModel;
@@ -56,25 +57,11 @@ public class StatementSelection {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("B" + this.block.getIndex() + ": [");
+		sb.append("B" + this.block.getIndex() + "{");
 		for (Placement p : this.selected) {
-			switch (p) {
-			case BEFORE:
-			case UNASSIGNED:
-				sb.append("-");
-				break;
-			case MOVED_BEFORE:
-				sb.append("\u2191");
-				break;
-			case INSIDE:
-				sb.append("E");
-				break;
-			case MOVED_AFTER:
-				sb.append("\u2193");
-				break;
-			}
+			sb.append(p.getCharacter());
 		}
-		sb.append("]");
+		sb.append("}");
 		return sb.toString();
 	}
 
