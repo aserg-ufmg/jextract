@@ -1,8 +1,11 @@
 package br.ufmg.dcc.labsoft.jextract.ranking;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.JavaModelException;
 
-public class ExtractMethodRecomendation {
+import br.ufmg.dcc.labsoft.jextract.model.OffsetBasedEmrDescriptor;
+
+public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 
 	public int rank = 0;
 	public final int id;
@@ -39,10 +42,20 @@ public class ExtractMethodRecomendation {
 		return sourceFile;
 	}
 
+	@Override
+	public String getFilePath() {
+		try {
+			return sourceFile.getUnderlyingResource().getProjectRelativePath().toString();
+		} catch (JavaModelException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void setSourceFile(ICompilationUnit sourceFile) {
 		this.sourceFile = sourceFile;
 	}
 	
+	@Override
 	public String getMethodBindingKey() {
 		return this.methodBindingKey;
 	}
@@ -51,7 +64,8 @@ public class ExtractMethodRecomendation {
 		this.methodBindingKey = methodBindingKey;
 	}
 
-	public ExtractionSlice getSlice() {
+	@Override
+	public ExtractionSlice getExtractionSlice() {
 		return slice;
 	}
 

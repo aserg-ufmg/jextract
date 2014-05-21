@@ -44,7 +44,7 @@ public class EmrRecommender {
 		final int maxPerMethod = this.settings.getMaxPerMethod();
 		final Double minScore = this.settings.getMinScore();
 		for (ExtractMethodRecomendation recommendation : recomendations) {
-			ExtractionSlice slice = recommendation.getSlice();
+			ExtractionSlice slice = recommendation.getExtractionSlice();
 			boolean greaterEqualMinScore = recommendation.getScore() >= minScore;
 			if (!greaterEqualMinScore) {
 				continue;
@@ -95,7 +95,7 @@ public class EmrRecommender {
 		//System.out.println("Analysing recomendations for " + key);
 
 		for (ExtractMethodRecomendation alternative : alternatives) {
-			final ExtractionSlice slice = alternative.getSlice();
+			final ExtractionSlice slice = alternative.getExtractionSlice();
 			StatementsSliceCountVisitor statementCounter = new StatementsSliceCountVisitor(slice);
 			methodDeclaration.accept(statementCounter);
 			alternative.setOriginalSize(statementCounter.getCount());

@@ -41,7 +41,7 @@ public class EmrScoringFunction {
 	}
 
 	public ScoreResult computeScore(ExtractMethodRecomendation rec, StatementSelection selected) {
-		final ExtractionSlice slice = rec.getSlice();
+		final ExtractionSlice slice = rec.getExtractionSlice();
 		final MethodModel model = selected.getMethodModel();
 		final BlockModel block = selected.getBlock();
 		
@@ -202,7 +202,7 @@ public class EmrScoringFunction {
 	public String getScoreDetails(ExtractMethodRecomendation emr) {
 		CompilationUnit cu = Utils.compile(emr.getSourceFile(), true);
 		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(emr.getMethodBindingKey());
-		ExtractionSlice slice = emr.getSlice();
+		ExtractionSlice slice = emr.getExtractionSlice();
 		
 		final EntitySet entitiesP1 = new EntitySet();
 		final EntitySet entitiesP2 = new EntitySet();

@@ -234,12 +234,15 @@ public class ProjectInliner {
 			Fragment fragment = new Fragment(start + sliceStart, start + sliceEnd, false);
 			boolean canExtract = Utils.canExtract(icu, fragment.start, fragment.length());
 			if (canExtract) {
-				emrList.add(new ExtractMethodRecomendation(
+				ExtractMethodRecomendation emr = new ExtractMethodRecomendation(
 					emrList.size() + 1,
 					declaringType,
 					methodSignature,
 					new ExtractionSlice(fragment)
-				));
+				);
+				emr.setSourceFile(icu);
+				emr.setMethodBindingKey(mKey);
+				emrList.add(emr);
 			}
 		}
 	}

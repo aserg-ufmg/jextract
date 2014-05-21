@@ -44,6 +44,21 @@ public class ExtractionSlice {
 		return -1;
 	}
 
+	private int findIntersection(int start, int end) {
+		for (Fragment frag : this.fragments) {
+			boolean startsAfterFrag = start >= frag.end;
+			boolean endsBeforeFrag = frag.start >= end;
+			if (!startsAfterFrag && !endsBeforeFrag) {
+				return frag.duplicate ? 1 : 0;
+			}
+		}
+		return -1;
+	}
+
+	public boolean hasIntersectionWithExtracted(int position, int length) {
+		return this.findIntersection(position, position + length) != -1;
+	}
+
 	public Fragment[] getFragments() {
 		return this.fragments;
 	}
@@ -82,7 +97,16 @@ public class ExtractionSlice {
 	public boolean isComposed() {
 		return this.fragments.length > 1;
 	}
-	
+
+	public boolean hasDuplication() {
+		for (Fragment fragment : this.fragments) {
+			if (fragment.duplicate) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public Fragment getEnclosingFragment() {
 		Fragment first = this.fragments[0];
 		Fragment last = this.fragments[this.fragments.length - 1];

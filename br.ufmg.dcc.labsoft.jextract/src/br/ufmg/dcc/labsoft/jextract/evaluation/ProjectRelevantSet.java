@@ -23,7 +23,7 @@ public class ProjectRelevantSet {
 		try {
 			List<ExtractMethodRecomendation> emrList = new EmrFileReader().read(path);
 			for (ExtractMethodRecomendation emr : emrList) {
-				this.put(emr.id, emr.className, emr.method, emr.getSlice().toString());
+				this.put(emr.id, emr.className, emr.method, emr.getExtractionSlice().toString());
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);

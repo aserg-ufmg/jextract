@@ -343,7 +343,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 			sourceFile.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslice", true, IResource.DEPTH_ONE);
 			sourceFile.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslicedup", true, IResource.DEPTH_ONE);
 
-			Fragment[] fragments = refactoring.getSlice().getFragments();
+			Fragment[] fragments = refactoring.getExtractionSlice().getFragments();
 			int firstChar = Integer.MAX_VALUE;
 			int lastChar = 0;
 			for (Fragment frag : fragments) {
