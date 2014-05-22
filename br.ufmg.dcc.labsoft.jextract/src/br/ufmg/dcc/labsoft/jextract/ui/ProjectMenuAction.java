@@ -55,19 +55,18 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.findEmr")) {
-			findEmr(project, null);
+			findEmr(project);
 			return;
 		}
 	}
 
 
-	private void findEmr(IProject project, ProjectRelevantSet goldset) throws Exception {
+	private void findEmr(IProject project) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			Settings settings = dialog.getSettings();
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			EmrGenerator generator = new EmrGenerator(recomendations, settings);
-			generator.setGoldset(goldset);
 			generator.generateRecomendations(project);
 			showResultView(recomendations, project, settings);
 		}

@@ -87,7 +87,7 @@ public class MethodModelBuilder extends ASTVisitor {
 				// Creates a block with a single statement.
 				createVirtualBlock(thisStatement);
 			}
-			fillEntities(stmNode, thisStatement);
+			//fillEntities(stmNode, thisStatement);
 		}
 	}
 

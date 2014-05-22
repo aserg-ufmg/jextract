@@ -60,4 +60,13 @@ public class ProjectRelevantSet {
 	public int size() {
 		return this.set.size();
 	}
+	
+	public Set<String> getCoveredClasses() {
+		HashSet<String> covered = new HashSet<String>();
+		for (ExtractMethodRecomendation emr : set) {
+			covered.add(emr.className);
+		}
+		return covered;
+	}
+
 }

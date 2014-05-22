@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
+	private final boolean includeExternalFields = true;
 
 	public DependenciesAstVisitor(ITypeBinding myClass) {
 		this.myClass = myClass;
@@ -148,8 +149,10 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 			//System.out.println(locationInParent.getId() + " has no field binding");
 		} else {
 			ITypeBinding declaringClass = variableBindig.getDeclaringClass();
-			if (declaringClass != null && declaringClass.equals(this.myClass)) {
-				this.onVariableAccess(node, variableBindig);
+			if (declaringClass != null) {
+				if (this.includeExternalFields || declaringClass.equals(this.myClass)) {
+					this.onVariableAccess(node, variableBindig);
+				}
 			}
 		}
 	}

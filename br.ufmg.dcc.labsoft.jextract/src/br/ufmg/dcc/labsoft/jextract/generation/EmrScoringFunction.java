@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -26,7 +27,7 @@ public class EmrScoringFunction {
 
 	private boolean penalizeEmptyExtraction = true;
 	private boolean useProbabilityFactor = false;
-	
+	private boolean includeMethodCalls = false;
 
 	public EmrScoringFunction() {
 		this.settings = new Settings();
@@ -150,6 +151,18 @@ public class EmrScoringFunction {
 					entitiesV2.add(binding.getKey());
 				}
 			}
+			@Override
+			public void onMethodAccess(ASTNode node, IMethodBinding binding) {
+				if (includeMethodCalls) {
+					if (slice.belongsToMethod(node.getStartPosition())) {
+						entitiesV1.add(binding.getKey());
+					}
+					if (slice.belongsToExtracted(node.getStartPosition())) {
+						entitiesV2.add(binding.getKey());
+					}
+				}
+			}
+			
 		});
     }
 

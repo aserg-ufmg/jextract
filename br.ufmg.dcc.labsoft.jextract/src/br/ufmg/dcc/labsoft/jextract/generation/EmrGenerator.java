@@ -5,6 +5,7 @@ import gr.uom.java.ast.CompilationUnitCache;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -12,7 +13,9 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
@@ -80,6 +83,17 @@ public class EmrGenerator {
 		this.recommender.printReport(project);
 	}
 
+	public void generateRecomendations(IProject project, ProjectRelevantSet goldset) throws Exception {
+		this.setGoldset(goldset);
+		IJavaProject jp = (IJavaProject) JavaCore.create(project);
+		Set<String> classes = goldset.getCoveredClasses();
+		for (String className : classes) {
+			IType type = jp.findType(className);
+			analyseMethods(type.getCompilationUnit(), null);
+		}
+		this.recommender.printReport(project);
+	}
+
 	public void generateRecomendations(IMethod method) throws Exception {
 		analyseMethods(method.getCompilationUnit(), method);
 	}
@@ -93,8 +107,8 @@ public class EmrGenerator {
 		parser.setResolveBindings(true);
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 		//we need that for JDeodorant :)
-		CompilationUnitCache.getInstance().addCompilationUnit(src, cu);
-		ASTInformationGenerator.setCurrentITypeRoot(src);
+		//CompilationUnitCache.getInstance().addCompilationUnit(src, cu);
+		//ASTInformationGenerator.setCurrentITypeRoot(src);
 
 		cu.accept(new ASTVisitor() {
 			@Override
