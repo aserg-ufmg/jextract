@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
+import org.eclipse.swt.widgets.Display;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
@@ -45,7 +47,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 			return;
 		}
 		
-		IProject project = projects.get(0);
+		final IProject project = projects.get(0);
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.showGoldset")) {
 			EmrFileReader reader = new EmrFileReader();
 			List<ExtractMethodRecomendation> recomendations = reader.read(project.getLocation().toString() + "/goldset.txt");
@@ -61,14 +63,30 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 
-	private void findEmr(IProject project) throws Exception {
+	private void findEmr(final IProject project) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
-			Settings settings = dialog.getSettings();
-			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			EmrGenerator generator = new EmrGenerator(recomendations, settings);
-			generator.generateRecomendations(project);
-			showResultView(recomendations, project, settings);
+			final Settings settings = dialog.getSettings();
+			AbstractJob job = new AbstractJob("Generating Recommendations") {
+				@Override
+				protected void doWorkIteration(int i, IProgressMonitor monitor) throws Exception {
+					final List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+					final EmrGenerator generator = new EmrGenerator(recomendations, settings);
+					generator.generateRecomendations(project);
+					
+					Display.getDefault().asyncExec(new Runnable() {
+						@Override
+                        public void run() {
+							try {
+								showResultView(recomendations, project, settings);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+					});
+				}
+			};
+			job.schedule();
 		}
 	}
 

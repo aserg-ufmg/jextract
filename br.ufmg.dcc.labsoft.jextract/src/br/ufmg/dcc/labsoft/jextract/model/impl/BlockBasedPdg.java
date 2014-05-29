@@ -1,18 +1,8 @@
 package br.ufmg.dcc.labsoft.jextract.model.impl;
 
-import gr.uom.java.ast.MethodObject;
-import gr.uom.java.ast.decomposition.cfg.CFG;
-import gr.uom.java.ast.decomposition.graph.GraphEdge;
-import gr.uom.java.ast.decomposition.graph.GraphNode;
-import gr.uom.java.ast.decomposition.pdg.PDG;
-import gr.uom.java.ast.decomposition.pdg.PDGDependence;
-import gr.uom.java.ast.decomposition.pdg.PDGNode;
-
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;

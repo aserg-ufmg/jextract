@@ -17,15 +17,16 @@
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="1"
-               id="br.ufmg.dcc.labsoft.jextract.showGoldset"
-               label="Show Oracle recomendations"
+               id="br.ufmg.dcc.labsoft.jextract.findEmr"
+               label="Find extract method opportunities"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
          </action>
+         <!--
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="1"
-               id="br.ufmg.dcc.labsoft.jextract.findEmr"
-               label="Find extract method opportunities"
+               id="br.ufmg.dcc.labsoft.jextract.showGoldset"
+               label="Show Oracle recomendations"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
          </action>
          <action
@@ -49,6 +50,7 @@
                label="Extract gold set"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
          </action>
+         -->
       </objectContribution>
    </extension>
    

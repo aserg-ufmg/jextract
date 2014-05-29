@@ -4,9 +4,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.ui.internal.UISynchronizer;
 
 public abstract class AbstractJob extends Job {
 
+	// get UISynchronize injected as field
 	public AbstractJob(String jobName) {
 		super(jobName);
 		setUser(true);
@@ -23,7 +25,11 @@ public abstract class AbstractJob extends Job {
 				}
 				//monitor.subTask("Processing tick #" + i);
 				// ... do some work ...
-				this.doWorkIteration(i, monitor);
+				try {
+					this.doWorkIteration(i, monitor);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 				monitor.worked(1);
 			}
 		} finally {
@@ -32,7 +38,7 @@ public abstract class AbstractJob extends Job {
 		return Status.OK_STATUS;
 	}
 
-	protected abstract void doWorkIteration(int i, IProgressMonitor monitor);
+	protected abstract void doWorkIteration(int i, IProgressMonitor monitor) throws Exception;
 
 	protected String getTaskName() {
 	    return "Processing";

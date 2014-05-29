@@ -1,8 +1,5 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
-import gr.uom.java.ast.ASTInformationGenerator;
-import gr.uom.java.ast.CompilationUnitCache;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
