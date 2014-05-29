@@ -21,7 +21,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
-	private final boolean includeExternalFields = true;
+	private final boolean includeExternalFields = false;
 
 	public DependenciesAstVisitor(ITypeBinding myClass) {
 		this.myClass = myClass;

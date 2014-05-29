@@ -25,9 +25,9 @@ public class EmrScoringFunction {
 	
 	private Coefficient coefficient = Coefficient.KUL;
 
-	private boolean penalizeEmptyExtraction = true;
 	private boolean useProbabilityFactor = false;
 	private boolean includeMethodCalls = false;
+	private boolean zeroScoreOnEmptySets = false;
 
 	public EmrScoringFunction() {
 		this.settings = new Settings();
@@ -110,11 +110,13 @@ public class EmrScoringFunction {
 			safenessExplanation = String.format(" safeness = %.3f", safeness);
 		}
 		
-		boolean emptyP = this.isExtractionEmpty(entitiesP1, entitiesP2);
-		boolean emptyT = this.isExtractionEmpty(entitiesT1, entitiesT2);
-		boolean emptyV = this.isExtractionEmpty(entitiesV1, entitiesV2);
-		if (emptyP && emptyT && emptyV) {
-			return new ScoreResult(0.0, "empty extracted entities set");
+		if (this.zeroScoreOnEmptySets) {
+			boolean emptyP = this.isExtractionEmpty(entitiesP1, entitiesP2);
+			boolean emptyT = this.isExtractionEmpty(entitiesT1, entitiesT2);
+			boolean emptyV = this.isExtractionEmpty(entitiesV1, entitiesV2);
+			if (emptyP && emptyT && emptyV) {
+				return new ScoreResult(0.0, "empty extracted entities set");
+			}
 		}
 		return new ScoreResult(score, explain + safenessExplanation);
 	}
@@ -178,9 +180,6 @@ public class EmrScoringFunction {
 		if (a == 0) {
 			return 0.0;
 		}
-//		if (this.penalizeEmptyExtraction  && c == 0) {
-//			return 1.0;
-//		}
 		return this.coefficient.formula(a, b, c);
 	}
 
