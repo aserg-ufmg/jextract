@@ -7,9 +7,15 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
+import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
+import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
+import org.eclipse.jdt.internal.ui.refactoring.code.ExtractMethodWizard;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -24,6 +30,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -42,6 +49,7 @@ import br.ufmg.dcc.labsoft.jextract.generation.EmrScoringFunction;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
+import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
@@ -94,12 +102,12 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		viewer.getTable().setLinesVisible(true);
 		viewer.getTable().setHeaderVisible(true);
 		
-		addColumnRank();
 		//TableViewerColumn colId = addColumnId();
 		//colId.getColumn().addListener(SWT.Selection, sortListener);
 		//addColumnOk();
 		addColumnClass();
 		addColumnMethodName();
+		addColumnRank();
 		addColumnOriginalSize().getColumn();
 		addColumnExtractedSize();
 		
@@ -125,7 +133,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		return addColumn("Rank", new EmrTableColumnLabelProvider() {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
-				return element.rank + "";
+				return (element.rank + 1) + "";
 			}
 		}, 50);
 	}
@@ -313,10 +321,25 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		actionApplyRefactoring = new Action() {
 			public void run() {
 				// TODO
+				ISelection selection = viewer.getSelection();
+				Object obj = ((IStructuredSelection)selection).getFirstElement();
+				applyRefactoring((ExtractMethodRecomendation) obj);
 			}
+
 		};
 		actionApplyRefactoring.setText("Apply Refactoring");
 		actionApplyRefactoring.setToolTipText("Apply Refactoring");
+	}
+
+	private void applyRefactoring(ExtractMethodRecomendation emr) {
+		// TODO Auto-generated method stub
+		ExtractionSlice slice = emr.getExtractionSlice();
+		Fragment frag = slice.getEnclosingFragment();
+		
+		ExtractMethodRefactoring refactoring = new ExtractMethodRefactoring(emr.getSourceFile(), frag.start, frag.length());
+		ExtractMethodWizard wizard = new ExtractMethodWizard(refactoring);
+		
+		new RefactoringStarter().activate(new ExtractMethodWizard(refactoring), null, RefactoringMessages.ExtractMethodAction_dialog_title, RefactoringSaveHelper.SAVE_NOTHING);
 	}
 
 	private void hookDoubleClickAction() {

@@ -27,7 +27,11 @@ public class EmrScoringFunction {
 
 	private boolean useProbabilityFactor = false;
 	private boolean includeMethodCalls = false;
-	private boolean zeroScoreOnEmptySets = false;
+	private boolean zeroScoreOnEmptyExtractionSet = true;
+	private boolean zeroScoreOnEmptyRemainingSet = true;
+	private double wP = 1.0;
+	private double wT = 1.0;
+	private double wV = 1.0;
 
 	public EmrScoringFunction() {
 		this.settings = new Settings();
@@ -93,10 +97,10 @@ public class EmrScoringFunction {
 			double probP = 1.0 - this.probability(rec, entitiesP1, entitiesP2);
 			double probT = 1.0 - this.probability(rec, entitiesT1, entitiesT2);
 			double probV = 1.0 - this.probability(rec, entitiesV1, entitiesV2);
-			score = (distP * probP + distT * probT + distV * probV) / 3.0;
+			score = (wP * distP * probP + wT * distT * probT + wV * distV * probV) / (wP + wT + wV);
 			explain = String.format("P = %.3f x %.3f, T = %.3f x %.3f, V = %.3f x %.3f", distP, probP, distT, probT, distV, probV);
 		} else {
-			score = (distP + distT + distV) / 3.0;
+			score = (wP * distP + wT * distT + wV * distV) / (wP + wT + wV);
 			//double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
 			explain = String.format("P = %.3f, T = %.3f, V = %.3f", distP, distT, distV);
 		}
@@ -110,12 +114,20 @@ public class EmrScoringFunction {
 			safenessExplanation = String.format(" safeness = %.3f", safeness);
 		}
 		
-		if (this.zeroScoreOnEmptySets) {
+		if (this.zeroScoreOnEmptyExtractionSet) {
 			boolean emptyP = this.isExtractionEmpty(entitiesP1, entitiesP2);
 			boolean emptyT = this.isExtractionEmpty(entitiesT1, entitiesT2);
 			boolean emptyV = this.isExtractionEmpty(entitiesV1, entitiesV2);
 			if (emptyP && emptyT && emptyV) {
 				return new ScoreResult(0.0, "empty extracted entities set");
+			}
+		}
+		if (this.zeroScoreOnEmptyRemainingSet) {
+			boolean emptyP = this.isRemainingEmpty(entitiesP1, entitiesP2);
+			boolean emptyT = this.isRemainingEmpty(entitiesT1, entitiesT2);
+			boolean emptyV = this.isRemainingEmpty(entitiesV1, entitiesV2);
+			if (emptyP && emptyT && emptyV) {
+				return new ScoreResult(0.0, "empty remaining entities set");
 			}
 		}
 		return new ScoreResult(score, explain + safenessExplanation);
@@ -188,6 +200,16 @@ public class EmrScoringFunction {
 		double a = intersection.size();
 		double c = entitiesT2.size() - a;
 		if (c == 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean isRemainingEmpty(EntitySet entitiesT1, EntitySet entitiesT2) {
+		EntitySet intersection = entitiesT1.intersection(entitiesT2);
+		double a = intersection.size();
+		double b = entitiesT1.size() - a;
+		if (b == 0) {
 			return true;
 		}
 		return false;

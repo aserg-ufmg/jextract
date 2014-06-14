@@ -21,7 +21,10 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
-	private final boolean includeExternalFields = false;
+	private final boolean includeExternalFields = true;
+	private final boolean ignoreJavaLang = true;
+	private final boolean ignoreJavaUtil = false;
+	private final boolean splitParentPackages = true;
 
 	public DependenciesAstVisitor(ITypeBinding myClass) {
 		this.myClass = myClass;
@@ -122,13 +125,20 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 				
 				IPackageBinding iPackage = typeBinding.getPackage();
 				String fullName = iPackage.getName();
-				int pos = fullName.length();
-				while (pos > 0) {
-					String moduleName = fullName.substring(0, pos);
+				if (this.splitParentPackages) {
+					int pos = fullName.length();
+					while (pos > 0) {
+						String moduleName = fullName.substring(0, pos);
+						if (!this.ignoreModule(moduleName)) {
+							this.onModuleAccess(node, moduleName);
+						}
+						pos = fullName.lastIndexOf('.', pos - 1);
+					}
+				} else {
+					String moduleName = fullName;
 					if (!this.ignoreModule(moduleName)) {
 						this.onModuleAccess(node, moduleName);
 					}
-					pos = fullName.lastIndexOf('.', pos - 1);
 				}
 			}
 		}
@@ -170,11 +180,17 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	}
 
 	private boolean ignoreType(ITypeBinding typeBinding) {
-		if (typeBinding.isPrimitive() || typeBinding.isArray() || typeBinding.getPackage() == null) {
+		if (/*typeBinding.isPrimitive() || typeBinding.isArray() || */typeBinding.getPackage() == null) {
 			return true;
 		}
 		String typeId = typeBinding.getKey();
-		return typeId.startsWith("Ljava/lang") || typeId.startsWith("Ljava/util");
+		if (this.ignoreJavaLang && typeId.startsWith("Ljava/lang")) {
+			return true;
+		}
+		if (this.ignoreJavaUtil && typeId.startsWith("Ljava/util")) {
+			return true;
+		}
+		return false;
 	}
 	
 	private boolean ignoreModule(String moduleName) {
