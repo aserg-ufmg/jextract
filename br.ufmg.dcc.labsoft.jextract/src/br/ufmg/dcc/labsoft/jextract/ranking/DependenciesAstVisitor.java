@@ -23,7 +23,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	private final ITypeBinding myClass;
 	private final boolean includeExternalFields = true;
 	private final boolean ignoreJavaLang = true;
-	private final boolean ignoreJavaUtil = false;
+	private final boolean ignoreJavaUtil = true;
 	private final boolean splitParentPackages = true;
 
 	public DependenciesAstVisitor(ITypeBinding myClass) {
