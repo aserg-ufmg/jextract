@@ -25,18 +25,6 @@ public class EmrScoringFunction {
 	
 	private Coefficient coefficient = Coefficient.KUL;
 
-	private boolean useProbabilityFactor = false;
-	private boolean includeMethodCalls = false;
-	private boolean zeroScoreOnEmptyExtractionSet = true;
-	private boolean zeroScoreOnEmptyRemainingSet = true;
-	private double wP = 1.0;
-	private double wT = 1.0;
-	private double wV = 1.0;
-
-	public EmrScoringFunction() {
-		this.settings = new Settings();
-	}
-
 	public static EmrScoringFunction getInstance(Settings settings) {
 		return new EmrScoringFunction(settings);
 	}
@@ -93,14 +81,14 @@ public class EmrScoringFunction {
 		
 		double score;
 		String explain;
-		if (this.useProbabilityFactor) {
+		if (this.settings.useProbabilityFactor) {
 			double probP = 1.0 - this.probability(rec, entitiesP1, entitiesP2);
 			double probT = 1.0 - this.probability(rec, entitiesT1, entitiesT2);
 			double probV = 1.0 - this.probability(rec, entitiesV1, entitiesV2);
-			score = (wP * distP * probP + wT * distT * probT + wV * distV * probV) / (wP + wT + wV);
+			score = (this.settings.wP * distP * probP + this.settings.wT * distT * probT + this.settings.wV * distV * probV) / (this.settings.wP + this.settings.wT + this.settings.wV);
 			explain = String.format("P = %.3f x %.3f, T = %.3f x %.3f, V = %.3f x %.3f", distP, probP, distT, probT, distV, probV);
 		} else {
-			score = (wP * distP + wT * distT + wV * distV) / (wP + wT + wV);
+			score = (this.settings.wP * distP + this.settings.wT * distT + this.settings.wV * distV) / (this.settings.wP + this.settings.wT + this.settings.wV);
 			//double score = (distP * meanP + distT * meanT + distV * meanV) / 3.0;
 			explain = String.format("P = %.3f, T = %.3f, V = %.3f", distP, distT, distV);
 		}
@@ -114,7 +102,7 @@ public class EmrScoringFunction {
 			safenessExplanation = String.format(" safeness = %.3f", safeness);
 		}
 		
-		if (this.zeroScoreOnEmptyExtractionSet) {
+		if (this.settings.zeroScoreOnEmptyExtractionSet) {
 			boolean emptyP = this.isExtractionEmpty(entitiesP1, entitiesP2);
 			boolean emptyT = this.isExtractionEmpty(entitiesT1, entitiesT2);
 			boolean emptyV = this.isExtractionEmpty(entitiesV1, entitiesV2);
@@ -122,7 +110,7 @@ public class EmrScoringFunction {
 				return new ScoreResult(0.0, "empty extracted entities set");
 			}
 		}
-		if (this.zeroScoreOnEmptyRemainingSet) {
+		if (this.settings.zeroScoreOnEmptyRemainingSet) {
 			boolean emptyP = this.isRemainingEmpty(entitiesP1, entitiesP2);
 			boolean emptyT = this.isRemainingEmpty(entitiesT1, entitiesT2);
 			boolean emptyV = this.isRemainingEmpty(entitiesV1, entitiesV2);
@@ -137,7 +125,7 @@ public class EmrScoringFunction {
             final EntitySet entitiesT1, final EntitySet entitiesT2, final EntitySet entitiesV1,
             final EntitySet entitiesV2, MethodDeclaration methodDeclaration) {
 	    ITypeBinding declaringClass = methodDeclaration.resolveBinding().getDeclaringClass();
-		methodDeclaration.accept(new DependenciesAstVisitor(declaringClass) {
+		methodDeclaration.accept(new DependenciesAstVisitor(declaringClass, this.settings) {
 			@Override
 			public void onModuleAccess(ASTNode node, String packageName) {
 				if (slice.belongsToMethod(node.getStartPosition())) {
@@ -167,7 +155,7 @@ public class EmrScoringFunction {
 			}
 			@Override
 			public void onMethodAccess(ASTNode node, IMethodBinding binding) {
-				if (includeMethodCalls) {
+				if (settings.includeMethodCalls) {
 					if (slice.belongsToMethod(node.getStartPosition())) {
 						entitiesV1.add(binding.getKey());
 					}

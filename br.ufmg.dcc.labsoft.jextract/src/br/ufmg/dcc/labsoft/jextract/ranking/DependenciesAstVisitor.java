@@ -21,16 +21,17 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
+
 public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
-	private final boolean includeExternalFields = true;
-	private final boolean ignoreJavaLang = false;
-	private final boolean ignoreJavaUtil = false;
-	private final boolean splitParentPackages = true;
-
-	public DependenciesAstVisitor(ITypeBinding myClass) {
+	
+	private final Settings settings; 
+	
+	public DependenciesAstVisitor(ITypeBinding myClass, Settings settings) {
 		this.myClass = myClass;
+		this.settings = settings;
 	}
 
 	@Override
@@ -142,7 +143,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 				
 				IPackageBinding iPackage = typeBinding.getPackage();
 				String fullName = iPackage.getName();
-				if (this.splitParentPackages) {
+				if (this.settings.splitParentPackages) {
 					int pos = fullName.length();
 					while (pos > 0) {
 						String moduleName = fullName.substring(0, pos);
@@ -177,7 +178,7 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 		} else {
 			ITypeBinding declaringClass = variableBindig.getDeclaringClass();
 			if (declaringClass != null) {
-				if (this.includeExternalFields || declaringClass.equals(this.myClass)) {
+				if (this.settings.includeExternalFields || declaringClass.equals(this.myClass)) {
 					this.onVariableAccess(node, variableBindig);
 				}
 			}
@@ -201,10 +202,10 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 			return true;
 		}
 		String typeId = typeBinding.getKey();
-		if (this.ignoreJavaLang && typeId.startsWith("Ljava/lang")) {
+		if (this.settings.ignoreJavaLang && typeId.startsWith("Ljava/lang")) {
 			return true;
 		}
-		if (this.ignoreJavaUtil && typeId.startsWith("Ljava/util")) {
+		if (this.settings.ignoreJavaUtil && typeId.startsWith("Ljava/util")) {
 			return true;
 		}
 		return false;

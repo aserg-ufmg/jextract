@@ -19,8 +19,9 @@ public class EmrRecommender {
 
 	private ProjectRelevantSet goldset = null;
 	private final Settings settings;
-	private int[] foundAt;
-	private int[] totalAt;
+	private ExecutionReport rep;
+	//private int[] foundAt;
+	//private int[] totalAt;
 	
     public EmrRecommender(Settings settings) {
 	    this.settings = settings;
@@ -28,12 +29,7 @@ public class EmrRecommender {
 
 	public void setGoldset(ProjectRelevantSet goldset) {
 		this.goldset = goldset;
-		this.foundAt = new int[this.settings.getMaxPerMethod()];
-		this.totalAt = new int[this.settings.getMaxPerMethod()];
-		for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-			this.foundAt[i] = 0;
-			this.totalAt[i] = 0;
-		}
+		this.rep = new ExecutionReport(this.settings, goldset);
 	}
 
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
@@ -62,20 +58,13 @@ public class EmrRecommender {
 		}
 		
 		if (this.goldset != null) {
-			String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
+			//String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
 			//System.out.print(id + ": ");
 			boolean found = false;
 			int i = 0;
 			for (ExtractMethodRecomendation rec : result) {
-				for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
-					this.totalAt[j]++;
-				}
-				if (this.goldset.contains(rec)) {
-					//System.out.println(i + 1);
+				if (this.rep.reportEmrAtRank(rec, i)) {
 					found = true;
-					for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
-						this.foundAt[j]++;
-					}
 				}
 				i++;
 			}
@@ -112,32 +101,7 @@ public class EmrRecommender {
 
 	public void printReport(IProject project) {
 	    if (this.goldset != null) {
-	    	System.out.println("----------------------------");
-	    	System.out.println(project.getName());
-	    	System.out.println("----------------------------");
-	    	System.out.print("total:     ");
-	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-	    		System.out.printf("%5d ", this.totalAt[i]);
-	    	}
-	    	System.out.println();
-	    	System.out.print("correct:   ");
-	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-	    		System.out.printf("%5d ", this.foundAt[i]);
-	    	}
-	    	System.out.println();
-	    	System.out.print("precision: ");
-	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-				double precision = ((double) this.foundAt[i]) / this.totalAt[i];
-				System.out.printf("%.3f ", precision);
-			}
-	    	System.out.println();
-	    	System.out.print("recall:    ");
-	    	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-	    		double recall = ((double) this.foundAt[i]) / this.goldset.size();
-	    		System.out.printf("%.3f ", recall);
-	    	}
-	    	System.out.println();
-	    	System.out.println("----------------------------");
+	    	this.rep.printReport(project);
 	    }
     }
 

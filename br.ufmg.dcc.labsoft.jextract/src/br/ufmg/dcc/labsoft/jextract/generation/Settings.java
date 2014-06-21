@@ -9,6 +9,19 @@ public class Settings {
 	private Double penalty = 0.0;
 	private Double minScore = 0.0;
 
+	public boolean includeMethodCalls = false;
+	public boolean includeExternalFields = true;
+	public boolean ignoreJavaLang = true;
+	public boolean ignoreJavaUtil = true;
+	public boolean splitParentPackages = true;
+
+	public boolean useProbabilityFactor = false;
+	public boolean zeroScoreOnEmptyExtractionSet = true;
+	public boolean zeroScoreOnEmptyRemainingSet = true;
+	public double wP = 1.0;
+	public double wT = 1.0;
+	public double wV = 1.0;
+	
 	public Integer getMinMethodSize() {
 		return this.minMethodSize;
 	}
