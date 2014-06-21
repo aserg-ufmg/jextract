@@ -133,7 +133,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		return addColumn("Rank", new EmrTableColumnLabelProvider() {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
-				return (element.rank + 1) + "";
+				return (element.getRank()) + "";
 			}
 		}, 50);
 	}

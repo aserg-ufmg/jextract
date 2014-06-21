@@ -7,7 +7,7 @@ import br.ufmg.dcc.labsoft.jextract.model.OffsetBasedEmrDescriptor;
 
 public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 
-	public int rank = 0;
+	private int rank = 0;
 	public final int id;
 	public final String className;
 	public final String method;

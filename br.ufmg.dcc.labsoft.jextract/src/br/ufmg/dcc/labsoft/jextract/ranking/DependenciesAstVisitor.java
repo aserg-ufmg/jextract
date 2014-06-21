@@ -2,6 +2,7 @@ package br.ufmg.dcc.labsoft.jextract.ranking;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.FieldAccess;
@@ -16,14 +17,16 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
 public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
 	private final boolean includeExternalFields = true;
-	private final boolean ignoreJavaLang = true;
-	private final boolean ignoreJavaUtil = true;
+	private final boolean ignoreJavaLang = false;
+	private final boolean ignoreJavaUtil = false;
 	private final boolean splitParentPackages = true;
 
 	public DependenciesAstVisitor(ITypeBinding myClass) {
@@ -96,6 +99,20 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 	public boolean visit(MarkerAnnotation node) {
 		ITypeBinding typeBinding = node.getTypeName().resolveTypeBinding();
 		handleTypeBinding(node, typeBinding);
+		return true;
+	}
+
+	@Override
+	public boolean visit(CastExpression node) {
+		Type type = node.getType();
+		handleTypeBinding(node, type.resolveBinding());
+		return true;
+	}
+
+	@Override
+	public boolean visit(TypeLiteral node) {
+		Type type = node.getType();
+		handleTypeBinding(node, type.resolveBinding());
 		return true;
 	}
 

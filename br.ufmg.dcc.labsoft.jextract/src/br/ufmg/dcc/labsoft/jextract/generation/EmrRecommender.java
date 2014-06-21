@@ -55,6 +55,7 @@ public class EmrRecommender {
 				continue;
 			}
 			result.add(recommendation);
+			recommendation.setRank(result.size());
 			if (result.size() >= maxPerMethod) {
 				break;
 			}

@@ -22,9 +22,9 @@ public class Utils {
 	public static void sort(List<ExtractMethodRecomendation> recomendations, boolean groupByMethod) {
 		EmrComparator comparator = new EmrComparator(groupByMethod);
 		Collections.sort(recomendations, comparator);
-		for (int i = 0, len = recomendations.size(); i < len; i++) {
-			recomendations.get(i).setRank(i);
-		}
+//		for (int i = 0, len = recomendations.size(); i < len; i++) {
+//			recomendations.get(i).setRank(i);
+//		}
 	}
 
 	public static List<ExtractMethodRecomendation> filterSameMethod(List<ExtractMethodRecomendation> recomendations, int maxCount) {

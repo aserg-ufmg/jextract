@@ -48,6 +48,9 @@ public class EmrGenerator {
 	private BlockModel block;
 	private StatementSelection selected;
 	
+	//private double[][] matrix;
+	//private ICompilationUnit msrc;
+	
 	public EmrGenerator(List<ExtractMethodRecomendation> recomendations, Settings settings) {
 		this.settings = settings;
 		this.recomendations = recomendations;
@@ -126,9 +129,34 @@ public class EmrGenerator {
 		this.recursiveCalls = 0;
 		this.model = m;
 		for (BlockModel b: m.getBlocks()) {
+//			int size = b.getChildren().size();
+//			this.matrix = new double[size][size];
+//			for (int i = 0; i < size; i++) {
+//				for (int j = 0; j < size; j++) {
+//					this.matrix[i][j] = 2.0;
+//				}
+//			}
+			
 			this.block = b;
 			this.selected = new StatementSelection(m, b);
 			this.init(0);
+			
+//			System.out.println("B" + b.getIndex());
+//			for (int i = 0; i < size; i++) {
+//				for (int j = 0; j < size; j++) {
+//					double v = this.matrix[i][j];
+//					if (i > j) {
+//						System.out.print(String.format(".... ", v));
+//					} else if (v == 2.0) {
+//						System.out.print(String.format("____ ", v));
+//					} else if (v == 3.0) {
+//						System.out.print(String.format("XXXX ", v));
+//					} else {
+//						System.out.print(String.format("%.2f ", v));
+//					}
+//				}
+//				System.out.println();
+//			}
 		}
 		//System.out.println("cost: " + this.recursiveCalls);
 	}
@@ -165,6 +193,7 @@ public class EmrGenerator {
 
 		final MethodModel emrMethod = MethodModelBuilder.create(src, methodDeclaration);
 		this.recomendationsForMethod = new ArrayList<ExtractMethodRecomendation>();
+//		this.msrc = src;
 		this.forEachSlice(emrMethod);
 		//System.out.println("done in " + (System.currentTimeMillis() - time1) + " ms.");
 		
@@ -251,6 +280,7 @@ public class EmrGenerator {
 		List<Fragment> frags = new ArrayList<Fragment>();
 		int length = children.size();
 		int totalSize = 0;
+		//int mi = 1, mj = 0;
 		for (int i = 0, j = 0; i < length; i = j) {
 			while (i < length && !selected.isSelected(i)) {
 				i++;
@@ -264,6 +294,8 @@ public class EmrGenerator {
 				Statement s1 = children.get(i).getAstNode();
 				Statement s2 = children.get(j - 1).getAstNode();
 				frags.add(new Fragment(s1.getStartPosition(), s2.getStartPosition() + s2.getLength(), false));
+				//mi = i;
+				//mj = j - 1;
 			}
 		}
 		
@@ -273,6 +305,14 @@ public class EmrGenerator {
 			ScoreResult scoreResult = this.scoringFn.computeScore(rec, selected);
 			rec.setScore(scoreResult.getScore());
 			rec.setExplanation(scoreResult.getExplanation());
+			
+//			Fragment frag = fragmentsArray[0];
+//			boolean valid = Utils.canExtract(this.msrc, frag.start, frag.length());
+//			if (valid) {
+//				this.matrix[mi][mj] = scoreResult.getScore();
+//			} else {
+//				this.matrix[mi][mj] = 3.0;
+//			}
 		}
     }
 }
