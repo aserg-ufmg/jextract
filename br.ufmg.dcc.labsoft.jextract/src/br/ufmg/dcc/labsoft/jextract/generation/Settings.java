@@ -1,7 +1,10 @@
 package br.ufmg.dcc.labsoft.jextract.generation;
 
+import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
+
 public class Settings {
 
+	private String id;
 	private Integer minMethodSize = 3;
 	private Integer minExtractedSize = 3;
 	private Integer maxPerMethod = 3;
@@ -11,8 +14,8 @@ public class Settings {
 
 	public boolean includeMethodCalls = false;
 	public boolean includeExternalFields = true;
-	public boolean ignoreJavaLang = true;
-	public boolean ignoreJavaUtil = true;
+	public boolean ignoreJavaLang = false;
+	public boolean ignoreJavaUtil = false;
 	public boolean splitParentPackages = true;
 
 	public boolean useProbabilityFactor = false;
@@ -21,7 +24,20 @@ public class Settings {
 	public double wP = 1.0;
 	public double wT = 1.0;
 	public double wV = 1.0;
+	private Coefficient coefficient = Coefficient.KUL;
+
+	public Settings() {
+		this.id = "default";
+	}
 	
+	public Settings(String id) {
+		this.id = id;
+	}
+	
+	public String getId() {
+		return this.id;
+	}
+
 	public Integer getMinMethodSize() {
 		return this.minMethodSize;
 	}
@@ -69,5 +85,13 @@ public class Settings {
 	public void setMinScore(Double minScore) {
 		this.minScore = minScore;
 	}
-	
+
+	public Coefficient getCoefficient() {
+		return coefficient;
+	}
+
+	public void setCoefficient(Coefficient coefficient) {
+		this.coefficient = coefficient;
+	}
+
 }

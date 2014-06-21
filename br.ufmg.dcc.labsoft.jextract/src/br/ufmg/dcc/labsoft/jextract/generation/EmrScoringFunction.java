@@ -13,7 +13,6 @@ import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.EntitySet;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.StatementModel;
-import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
 import br.ufmg.dcc.labsoft.jextract.ranking.DependenciesAstVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
@@ -23,8 +22,6 @@ public class EmrScoringFunction {
 
 	protected final Settings settings;
 	
-	private Coefficient coefficient = Coefficient.KUL;
-
 	public static EmrScoringFunction getInstance(Settings settings) {
 		return new EmrScoringFunction(settings);
 	}
@@ -180,7 +177,7 @@ public class EmrScoringFunction {
 		if (a == 0) {
 			return 0.0;
 		}
-		return this.coefficient.formula(a, b, c);
+		return this.settings.getCoefficient().formula(a, b, c);
 	}
 
 	private boolean isExtractionEmpty(EntitySet entitiesT1, EntitySet entitiesT2) {

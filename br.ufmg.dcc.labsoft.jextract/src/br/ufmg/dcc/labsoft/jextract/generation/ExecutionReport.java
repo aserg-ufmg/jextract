@@ -7,6 +7,7 @@ import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 
 public class ExecutionReport {
 
+	private IProject project;
 	private final Settings settings;
 	private final ProjectRelevantSet goldset;
 	private int[] foundAt;
@@ -21,6 +22,26 @@ public class ExecutionReport {
 			this.foundAt[i] = 0;
 			this.totalAt[i] = 0;
 		}
+	}
+	
+	public IProject getProject() {
+		return this.project;
+	}
+
+	public void setProject(IProject project) {
+		this.project = project;
+	}
+
+	public int getOracleSize() {
+		return this.goldset.size();
+	}
+	
+	public int getTotalAt(int i) {
+		return this.totalAt[i];
+	}
+	
+	public int getFoundAt(int i) {
+		return this.foundAt[i];
 	}
 	
 	public boolean reportEmrAtRank(ExtractMethodRecomendation rec, int i) {
@@ -38,7 +59,7 @@ public class ExecutionReport {
 		return inOracle;
 	}
 	
-	public void printReport(IProject project) {
+	public void printReport() {
 	    if (this.goldset != null) {
 	    	System.out.println("----------------------------");
 	    	System.out.println(project.getName());

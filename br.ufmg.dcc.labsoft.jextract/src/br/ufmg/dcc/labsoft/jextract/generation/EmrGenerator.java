@@ -63,7 +63,7 @@ public class EmrGenerator {
 		this.recommender.setGoldset(goldset);
 	}
 
-	public void generateRecomendations(IProject project) throws Exception {
+	public ExecutionReport generateRecomendations(IProject project) throws Exception {
 		project.accept(new IResourceVisitor() {
 			@Override
 			public boolean visit(IResource resource) throws CoreException {
@@ -80,10 +80,10 @@ public class EmrGenerator {
 				return true;
 			}
 		});
-		this.recommender.printReport(project);
+		return this.recommender.getReport(project);
 	}
 
-	public void generateRecomendations(IProject project, ProjectRelevantSet goldset) throws Exception {
+	public ExecutionReport generateRecomendations(IProject project, ProjectRelevantSet goldset) throws Exception {
 		this.setGoldset(goldset);
 		IJavaProject jp = (IJavaProject) JavaCore.create(project);
 		Set<String> classes = goldset.getCoveredClasses();
@@ -91,7 +91,7 @@ public class EmrGenerator {
 			IType type = jp.findType(className);
 			analyseMethods(type.getCompilationUnit(), null);
 		}
-		this.recommender.printReport(project);
+		return this.recommender.getReport(project);
 	}
 
 	public void generateRecomendations(IMethod method) throws Exception {

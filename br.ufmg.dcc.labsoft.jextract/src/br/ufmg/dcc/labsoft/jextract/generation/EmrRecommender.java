@@ -99,10 +99,9 @@ public class EmrRecommender {
 		}
 	}
 
-	public void printReport(IProject project) {
-	    if (this.goldset != null) {
-	    	this.rep.printReport(project);
-	    }
-    }
+	public ExecutionReport getReport(IProject project) {
+		this.rep.setProject(project);
+		return this.rep;
+	}
 
 }
