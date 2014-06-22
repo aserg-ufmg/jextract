@@ -47,7 +47,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			//List<Settings> settingsList = this.getSettingsList();
-			List<Settings> settingsList = this.getDefaultSettingsList();
+			List<Settings> settingsList = this.getSettingsList2();
+			//List<Settings> settingsList = this.getDefaultSettingsList();
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -103,6 +104,33 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	    return list;
     }
 	
+	private List<Settings> getSettingsList2() {
+		List<Settings> list = new ArrayList<Settings>();
+		eachCoef(list, 1, 0, 0);
+		eachCoef(list, 0, 1, 0);
+		eachCoef(list, 0, 0, 1);
+		eachCoef(list, 1, 1, 0);
+		eachCoef(list, 1, 0, 1);
+		eachCoef(list, 1, 1, 1);
+		eachCoef(list, 4, 3, 2);
+		eachCoef(list, 1, 2, 3);
+		eachCoef(list, 2, 1, 1);
+	    return list;
+    }
+	
+	private void eachCoef(List<Settings> settings, int wv, int wt, int wp) {
+		String weights = String.format("%d-%d-%d", wv, wt, wp);
+		//for (Coefficient c : Coefficient.values()) {
+			Coefficient c = Coefficient.KUL;
+			Settings s = new Settings(c.toString().toLowerCase() + " " + weights);
+			s.wV = wv;
+			s.wT = wt;
+			s.wP = wp;
+			s.setCoefficient(c);
+			settings.add(s);
+		//}
+	}
+	
 	private void findEmr(final IProject project) throws Exception {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
@@ -143,8 +171,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 				ExecutionReport rep = generator.generateRecomendations(project);
 				arep.merge(rep);
 			}
-			arep.printReport();
-			//arep.printSummary();
+			//arep.printReport();
+			arep.printSummary();
 			if (projects.size() == 1 && settingsList.size() == 1) {
 				showResultView(recomendations, projects.get(0), settings);
 			}

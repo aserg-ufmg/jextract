@@ -16,11 +16,11 @@ public enum Coefficient {
 			return 2 * a / (2 * a + b + c);
 		}
 	},
-	// Ochiai
-	OCH {
+	// Sokal and Sneath 2
+	SS2 {
 		@Override
 		public double formula(double a, double b, double c) {
-			return a / Math.sqrt(((a + b) * (a + c)));
+			return a / (a + 2 * (b + c));
 		}
 	},
 	// PSC
@@ -37,11 +37,11 @@ public enum Coefficient {
 			return 0.5 * ((a / (a + b)) + (a / (a + c)));
 		}
 	},
-	// Sokal and Sneath 2
-	SS2 {
+	// Ochiai
+	OCH {
 		@Override
 		public double formula(double a, double b, double c) {
-			return a / (a + 2 * (b + c));
+			return a / Math.sqrt(((a + b) * (a + c)));
 		}
 	};
 
