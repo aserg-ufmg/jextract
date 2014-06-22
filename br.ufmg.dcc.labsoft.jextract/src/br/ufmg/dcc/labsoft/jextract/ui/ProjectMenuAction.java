@@ -46,7 +46,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
-			List<Settings> settingsList = this.getSettingsList();
+			//List<Settings> settingsList = this.getSettingsList();
+			List<Settings> settingsList = this.getDefaultSettingsList();
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -72,6 +73,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		
 		Settings kul = new Settings("kul");
 		kul.setCoefficient(Coefficient.KUL);
+		list.add(kul);
 		
 	    return list;
     }
@@ -141,8 +143,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 				ExecutionReport rep = generator.generateRecomendations(project);
 				arep.merge(rep);
 			}
-			//arep.printReport();
-			arep.printSummary();
+			arep.printReport();
+			//arep.printSummary();
 			if (projects.size() == 1 && settingsList.size() == 1) {
 				showResultView(recomendations, projects.get(0), settings);
 			}

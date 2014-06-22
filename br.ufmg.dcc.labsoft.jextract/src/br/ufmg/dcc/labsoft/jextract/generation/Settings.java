@@ -14,9 +14,10 @@ public class Settings {
 
 	public boolean includeMethodCalls = false;
 	public boolean includeExternalFields = true;
-	public boolean ignoreJavaLang = false;
+	public boolean ignoreJavaLang = true;
 	public boolean ignoreJavaUtil = false;
 	public boolean splitParentPackages = true;
+	public boolean includeTypeArguments = true;
 
 	public boolean useProbabilityFactor = false;
 	public boolean zeroScoreOnEmptyExtractionSet = true;
