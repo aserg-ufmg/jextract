@@ -32,11 +32,16 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 
 	private final ITypeBinding myClass;
 	
-	private final Settings settings; 
-	
+	private final Settings settings;
+
+	private NameFilter typeNameFilter;
+	private NameFilter packageNameFilter; 
+
 	public DependenciesAstVisitor(ITypeBinding myClass, Settings settings) {
 		this.myClass = myClass;
 		this.settings = settings;
+		this.typeNameFilter = new NameFilter(settings.getTypesToIgnore());
+		this.packageNameFilter = new NameFilter(settings.getPackagesToIgnore());
 	}
 
 	@Override
@@ -247,18 +252,12 @@ public abstract class DependenciesAstVisitor extends ASTVisitor {
 		if (/*typeBinding.isPrimitive() || typeBinding.isArray() || */typeBinding.getPackage() == null) {
 			return true;
 		}
-		String typeId = typeBinding.getKey();
-		if (this.settings.ignoreJavaLang && typeId.startsWith("Ljava/lang")) {
-			return true;
-		}
-		if (this.settings.ignoreJavaUtil && typeId.startsWith("Ljava/util")) {
-			return true;
-		}
-		return false;
+		String fullName = typeBinding.getQualifiedName();
+		return this.typeNameFilter.contains(fullName);
 	}
-	
+
 	private boolean ignoreModule(String moduleName) {
-		return moduleName.equals("com") || moduleName.equals("org") || moduleName.equals("java") || moduleName.equals("javax");
+		return this.packageNameFilter.contains(moduleName);
 	}
 
 }

@@ -14,8 +14,6 @@ public class Settings {
 
 	public boolean includeMethodCalls = false;
 	public boolean includeExternalFields = true;
-	public boolean ignoreJavaLang = true;
-	public boolean ignoreJavaUtil = false;
 	public boolean splitParentPackages = true;
 	public boolean includeTypeArguments = true;
 
@@ -26,6 +24,9 @@ public class Settings {
 	public double wT = 1.0;
 	public double wV = 1.0;
 	private Coefficient coefficient = Coefficient.KUL;
+
+	private String typesToIgnore = "java.lang.*,java.util.*";
+	private String packagesToIgnore = "java,javax,com,org,br";
 
 	public Settings() {
 		this.id = "default";
@@ -93,6 +94,22 @@ public class Settings {
 
 	public void setCoefficient(Coefficient coefficient) {
 		this.coefficient = coefficient;
+	}
+
+	public String getTypesToIgnore() {
+		return typesToIgnore;
+	}
+
+	public void setTypesToIgnore(String typesToIgnore) {
+		this.typesToIgnore = typesToIgnore;
+	}
+
+	public String getPackagesToIgnore() {
+		return packagesToIgnore;
+	}
+
+	public void setPackagesToIgnore(String packagesToIgnore) {
+		this.packagesToIgnore = packagesToIgnore;
 	}
 
 }
