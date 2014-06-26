@@ -17,3 +17,5 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.core.manipulation
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: lib/mysql-connector-java-5.1.31-bin.jar,
+ .

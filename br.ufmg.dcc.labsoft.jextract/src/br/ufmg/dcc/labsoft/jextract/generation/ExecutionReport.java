@@ -2,19 +2,22 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 import org.eclipse.core.resources.IProject;
 
+import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 
 public class ExecutionReport {
 
-	private IProject project;
+	private Database db = null;
+	private final IProject project;
 	private final Settings settings;
 	private final ProjectRelevantSet goldset;
 	private int[] foundAt;
 	private int[] totalAt;
 	
-	public ExecutionReport(Settings settings, ProjectRelevantSet goldset) {
+	public ExecutionReport(Settings settings, IProject project, ProjectRelevantSet goldset, Database db) {
 		this.settings = settings;
+		this.project = project;
 		this.goldset = goldset;
 		this.foundAt = new int[this.settings.getMaxPerMethod()];
 		this.totalAt = new int[this.settings.getMaxPerMethod()];
@@ -22,15 +25,16 @@ public class ExecutionReport {
 			this.foundAt[i] = 0;
 			this.totalAt[i] = 0;
 		}
+		this.db = db;
 	}
 	
 	public IProject getProject() {
 		return this.project;
 	}
 
-	public void setProject(IProject project) {
-		this.project = project;
-	}
+//	public void setProject(IProject project) {
+//		this.project = project;
+//	}
 
 	public int getOracleSize() {
 		return this.goldset.size();
@@ -55,6 +59,10 @@ public class ExecutionReport {
 			for (int j = i; j < this.settings.getMaxPerMethod(); j++) {
 				this.foundAt[j]++;
 			}
+		}
+		
+		if (this.db != null) {
+			this.db.insertEmi(this.settings.getId(), this.project.getName(), rec.getFilePath(), rec.getMethodBindingKey(), rec.getExtractionSlice().toString(), i, rec.getScore(), inOracle);
 		}
 		return inOracle;
 	}

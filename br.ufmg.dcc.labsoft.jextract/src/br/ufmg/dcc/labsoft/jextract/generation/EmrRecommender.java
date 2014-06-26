@@ -8,6 +8,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
+import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
@@ -27,9 +28,9 @@ public class EmrRecommender {
 	    this.settings = settings;
     }
 
-	public void setGoldset(ProjectRelevantSet goldset) {
+	public void setGoldset(IProject project, ProjectRelevantSet goldset, Database db) {
 		this.goldset = goldset;
-		this.rep = new ExecutionReport(this.settings, goldset);
+		this.rep = new ExecutionReport(this.settings, project, goldset, db);
 	}
 
 	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
@@ -99,8 +100,7 @@ public class EmrRecommender {
 		}
 	}
 
-	public ExecutionReport getReport(IProject project) {
-		this.rep.setProject(project);
+	public ExecutionReport getReport() {
 		return this.rep;
 	}
 

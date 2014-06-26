@@ -10,6 +10,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 
+import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.generation.AggregatedExecutionReport;
@@ -47,8 +48,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			//List<Settings> settingsList = this.getSettingsList();
-			List<Settings> settingsList = this.getSettingsList2();
-			//List<Settings> settingsList = this.getDefaultSettingsList();
+			//List<Settings> settingsList = this.getSettingsList2();
+			List<Settings> settingsList = this.getDefaultSettingsList();
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -72,7 +73,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	private List<Settings> getDefaultSettingsList() {
 		List<Settings> list = new ArrayList<Settings>();
 		
-		Settings kul = new Settings("kul");
+		Settings kul = new Settings("default");
+		kul.setMaxPerMethod(20);
 		kul.setCoefficient(Coefficient.KUL);
 		list.add(kul);
 		
@@ -159,24 +161,31 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 	private void evaluateEmr(List<IProject> projects, List<Settings> settingsList) throws Exception {
-		for (Settings settings : settingsList) {
-			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-			//Settings settings = dialog.getSettings();
-			AggregatedExecutionReport arep = new AggregatedExecutionReport(settings);
-			for (IProject project : projects) {
-				ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
-				recomendations = new ArrayList<ExtractMethodRecomendation>();
-				EmrGenerator generator = new EmrGenerator(recomendations, settings);
-				generator.setGoldset(goldset);
-				ExecutionReport rep = generator.generateRecomendations(project);
-				arep.merge(rep);
+		Database db = new Database();
+		//Database db = new FakeDatabase();
+		try {
+			for (Settings settings : settingsList) {
+				List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+				//Settings settings = dialog.getSettings();
+				AggregatedExecutionReport arep = new AggregatedExecutionReport(settings);
+				for (IProject project : projects) {
+					ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
+					recomendations = new ArrayList<ExtractMethodRecomendation>();
+					EmrGenerator generator = new EmrGenerator(recomendations, settings);
+					generator.setGoldset(project, goldset, db);
+					ExecutionReport rep = generator.generateRecomendations(project);
+					arep.merge(rep);
+				}
+				//arep.printReport();
+				arep.printSummary();
+				if (projects.size() == 1 && settingsList.size() == 1) {
+					showResultView(recomendations, projects.get(0), settings);
+				}
 			}
-			//arep.printReport();
-			arep.printSummary();
-			if (projects.size() == 1 && settingsList.size() == 1) {
-				showResultView(recomendations, projects.get(0), settings);
-			}
+		} finally {
+			db.close();
 		}
+		
 		MessageDialog.openInformation(this.getShell(), "JExtract", "Evaluation complete.");
 	}
 

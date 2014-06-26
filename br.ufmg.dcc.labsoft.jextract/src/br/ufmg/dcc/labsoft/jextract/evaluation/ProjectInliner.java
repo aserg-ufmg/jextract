@@ -66,6 +66,7 @@ public class ProjectInliner {
 	private IProgressMonitor pm = new NullProgressMonitor();
 	
 	private Random random = new Random(283746L);
+	private boolean saveToDatabase = true;
 
 	public ProjectInliner() {
 		this.mMap = new HashMap<String, MethodData>();
@@ -103,6 +104,16 @@ public class ProjectInliner {
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
 				this.extractEmr(emrList, icu, cu, mKey);
+			}
+		}
+		if (this.saveToDatabase ) {
+			Database db = new Database();
+			try {
+				for (ExtractMethodRecomendation emr : emrList) {
+					db.insertKnownEmi(project.getName(), emr.getFilePath(), emr.getMethodBindingKey(), emr.getExtractionSlice().toString(), emr.getOriginalSize());
+				}
+			} finally {
+				db.close();
 			}
 		}
 		EmrFileExporter exporter = new EmrFileExporter(emrList, project.getLocation().toString() + "/goldset.txt");
@@ -242,6 +253,10 @@ public class ProjectInliner {
 				);
 				emr.setSourceFile(icu);
 				emr.setMethodBindingKey(mKey);
+				StatementsCountVisitor counter = new StatementsCountVisitor();
+				methodDeclaration.accept(counter);
+				final int size = counter.getCount();
+				emr.setOriginalSize(size);
 				emrList.add(emr);
 			}
 		}

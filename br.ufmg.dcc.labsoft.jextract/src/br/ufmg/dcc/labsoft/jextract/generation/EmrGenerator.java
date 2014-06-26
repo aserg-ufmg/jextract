@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 
+import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
@@ -58,9 +59,9 @@ public class EmrGenerator {
 		this.scoringFn = EmrScoringFunction.getInstance(settings);
 	}
 
-	public void setGoldset(ProjectRelevantSet goldset) {
+	public void setGoldset(IProject project, ProjectRelevantSet goldset, Database db) {
 		this.goldset = goldset;
-		this.recommender.setGoldset(goldset);
+		this.recommender.setGoldset(project, goldset, db);
 	}
 
 	public ExecutionReport generateRecomendations(IProject project) throws Exception {
@@ -80,18 +81,18 @@ public class EmrGenerator {
 				return true;
 			}
 		});
-		return this.recommender.getReport(project);
+		return this.recommender.getReport();
 	}
 
-	public ExecutionReport generateRecomendations(IProject project, ProjectRelevantSet goldset) throws Exception {
-		this.setGoldset(goldset);
+	public ExecutionReport generateRecomendations(IProject project, ProjectRelevantSet goldset, Database db) throws Exception {
+		this.setGoldset(project, goldset, db);
 		IJavaProject jp = (IJavaProject) JavaCore.create(project);
 		Set<String> classes = goldset.getCoveredClasses();
 		for (String className : classes) {
 			IType type = jp.findType(className);
 			analyseMethods(type.getCompilationUnit(), null);
 		}
-		return this.recommender.getReport(project);
+		return this.recommender.getReport();
 	}
 
 	public void generateRecomendations(IMethod method) throws Exception {
