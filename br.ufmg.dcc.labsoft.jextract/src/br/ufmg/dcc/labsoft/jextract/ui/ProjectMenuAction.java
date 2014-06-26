@@ -49,7 +49,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			//List<Settings> settingsList = this.getSettingsList();
 			//List<Settings> settingsList = this.getSettingsList2();
-			List<Settings> settingsList = this.getDefaultSettingsList();
+			List<Settings> settingsList = this.getCanonicalSettings();
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -70,11 +70,11 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 
-	private List<Settings> getDefaultSettingsList() {
+	private List<Settings> getCanonicalSettings() {
 		List<Settings> list = new ArrayList<Settings>();
 		
-		Settings kul = new Settings("default");
-		kul.setMaxPerMethod(20);
+		Settings kul = new Settings("main");
+		kul.setMaxPerMethod(25);
 		kul.setCoefficient(Coefficient.KUL);
 		list.add(kul);
 		
@@ -122,15 +122,40 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	
 	private void eachCoef(List<Settings> settings, int wv, int wt, int wp) {
 		String weights = String.format("%d-%d-%d", wv, wt, wp);
-		//for (Coefficient c : Coefficient.values()) {
-			Coefficient c = Coefficient.KUL;
+		for (Coefficient c : Coefficient.values()) {
 			Settings s = new Settings(c.toString().toLowerCase() + " " + weights);
 			s.wV = wv;
 			s.wT = wt;
 			s.wP = wp;
 			s.setCoefficient(c);
 			settings.add(s);
-		//}
+		}
+	}
+
+	private List<Settings> getSettingsWeights() {
+		List<Settings> list = new ArrayList<Settings>();
+		oneCoef(list, 1, 0, 0);
+		oneCoef(list, 0, 1, 0);
+		oneCoef(list, 0, 0, 1);
+		oneCoef(list, 1, 1, 0);
+		oneCoef(list, 1, 0, 1);
+		oneCoef(list, 1, 1, 1);
+		oneCoef(list, 9, 6, 4);
+		oneCoef(list, 100, 10, 1);
+		oneCoef(list, 4, 6, 9);
+		oneCoef(list, 1, 10, 100);
+	    return list;
+    }
+	
+	private void oneCoef(List<Settings> settings, int wv, int wt, int wp) {
+		String weights = String.format("%d-%d-%d", wv, wt, wp);
+		Coefficient c = Coefficient.KUL;
+		Settings s = new Settings(c.toString().toLowerCase() + " " + weights);
+		s.wV = wv;
+		s.wT = wt;
+		s.wP = wp;
+		s.setCoefficient(c);
+		settings.add(s);
 	}
 	
 	private void findEmr(final IProject project) throws Exception {
