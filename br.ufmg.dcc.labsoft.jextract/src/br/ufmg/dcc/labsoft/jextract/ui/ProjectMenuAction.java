@@ -32,7 +32,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		String actionId = action.getId();
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.inlineMethods")) {
 			for (IProject project : projects) {
-				new ProjectInliner().run(project);
+				new ProjectInliner(project).run();
 			}
 			MessageDialog.openInformation(this.getShell(), "JExtract", "Inline methods complete.");
 			return;
@@ -40,7 +40,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.extractGoldSet")) {
 			for (IProject project : projects) {
-				new ProjectInliner().extractGoldSet(project);
+				new ProjectInliner(project).extractGoldSet();
 			}
 			MessageDialog.openInformation(this.getShell(), "JExtract", "Gold set extracted.");
 			return;
@@ -73,8 +73,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	private List<Settings> getCanonicalSettings() {
 		List<Settings> list = new ArrayList<Settings>();
 		
-		Settings kul = new Settings("main");
-		kul.setMaxPerMethod(25);
+		Settings kul = new Settings("main2");
+		kul.setMaxPerMethod(3);
 		kul.setCoefficient(Coefficient.KUL);
 		list.add(kul);
 		

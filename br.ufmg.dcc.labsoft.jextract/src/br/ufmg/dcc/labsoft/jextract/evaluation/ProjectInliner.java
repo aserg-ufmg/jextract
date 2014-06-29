@@ -1,5 +1,10 @@
 package br.ufmg.dcc.labsoft.jextract.evaluation;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +23,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -55,26 +61,41 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class ProjectInliner {
 
+	private static final long RANDOM_SEED = 917346893L;
 	private static final String MARKER_CLOSE = "/*}*/";
 	private static final String MARKER_OPEN = "/*{*/";
 	private static final String MARKER_PLACEHOLDER = "{;}";
+	private final IProject project;
 	Map<String, MethodData> mMap;
 	Set<String> modifiedMethods;
+	Set<String> inlinedMethods;
 	private int minSize = 3;
 	private int methodsAnalysed = 0;
-	private int methodsInlined = 0;
+	private final int maxInlinesPerProject = 100;
+	private final int maxInlinesPerFile = 5;
 	private IProgressMonitor pm = new NullProgressMonitor();
+	List<MethodInvocationCandidate> appliedInlines;
 	
-	private Random random = new Random(283746L);
+	private Random random;
 	private boolean saveToDatabase = true;
 
-	public ProjectInliner() {
+	public ProjectInliner(IProject project) {
+		this.project = project;
 		this.mMap = new HashMap<String, MethodData>();
 		this.modifiedMethods = new HashSet<String>();
+		this.inlinedMethods = new HashSet<String>();
+		this.appliedInlines = new ArrayList<MethodInvocationCandidate>();
+		this.random = new Random(RANDOM_SEED);
 	}
 
-	public void run(IProject project) throws Exception {
-		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
+	public void run() throws Exception {
+		this.inlineAll();
+		this.writeInlineLog();
+		this.extractGoldSet();
+	}
+
+	private void inlineAll() throws CoreException, Exception {
+	    List<ICompilationUnit> files = this.findCandidateFiles(project);
 		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
 		for (ICompilationUnit icu : files) {
 			rewriter.rewrite(icu);
@@ -85,18 +106,44 @@ public class ProjectInliner {
 			}
 		}
 		
+		Collections.shuffle(files, this.random);
 		for (ICompilationUnit icu : files) {
-			Iterable<String> methodKeys = this.findCandidateMethods(icu);
+			List<String> methodKeys = this.findCandidateMethods(icu);
+			Collections.shuffle(methodKeys, this.random);
+			int appliedInFile = 0;
 			for (String mKey : methodKeys) {
-				this.applyBestInline(icu, mKey);
+				if (this.appliedInlines.size() >= this.maxInlinesPerProject) {
+					return;
+				}
+				if (appliedInFile >= this.maxInlinesPerFile) {
+					break;
+				}
+				if (this.applyBestInline(icu, mKey)) {
+					appliedInFile++;
+				}
 			}
 		}
-		System.out.println(String.format("%d methods analysed, %d methods inlined", methodsAnalysed, methodsInlined));
-		
-		this.extractGoldSet(project);
-	}
+		System.out.println(String.format("%d methods analysed, %d methods inlined", methodsAnalysed, this.appliedInlines.size()));
+    }
 
-	public void extractGoldSet(IProject project) throws CoreException {
+	public void writeInlineLog() {
+		try {
+			File file = new File(project.getLocation().toString() + "/inline.log");
+			PrintWriter writer = new PrintWriter(file);
+			try {
+				for (MethodInvocationCandidate mic : this.appliedInlines) {
+					writer.println(mic);
+				}
+			} 
+			finally {
+				writer.close();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public void extractGoldSet() throws CoreException {
 		final List<ExtractMethodRecomendation> emrList = new ArrayList<ExtractMethodRecomendation>();
 		Iterable<ICompilationUnit> files = this.findCandidateFiles(project);
 		for (ICompilationUnit icu : files) {
@@ -106,11 +153,13 @@ public class ProjectInliner {
 				this.extractEmr(emrList, icu, cu, mKey);
 			}
 		}
+		Map<String, Boolean> sameClassMap = this.readSameClassMap();
 		if (this.saveToDatabase ) {
 			Database db = new Database();
 			try {
 				for (ExtractMethodRecomendation emr : emrList) {
-					db.insertKnownEmi(project.getName(), emr.getFilePath(), emr.getMethodBindingKey(), emr.getExtractionSlice().toString(), emr.getOriginalSize());
+					Boolean sameClass = sameClassMap.get(emr.getMethodBindingKey());
+					db.insertKnownEmi(this.project.getName(), emr.getFilePath(), emr.getMethodBindingKey(), emr.getExtractionSlice().toString(), emr.getOriginalSize(), sameClass);
 				}
 			} finally {
 				db.close();
@@ -120,7 +169,35 @@ public class ProjectInliner {
 		exporter.export();
 	}
 	
-	private Iterable<ICompilationUnit> findCandidateFiles(IProject project) throws CoreException {
+    public Map<String, Boolean> readSameClassMap() {
+		try {
+			Map<String, Boolean> sameClassMap = new HashMap<String, Boolean>();
+			File file = new File(this.project.getLocation().toString() + "/inline.log");
+			if (!file.exists()) {
+				return sameClassMap;
+			}
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			try {
+				String line;
+				while ((line = br.readLine()) != null) {
+					String[] cols = line.split("\t");
+					final String sourcePath = cols[0];
+					final String method = cols[1];
+					final String sourcePathInvoked = cols[2];
+					final String methodInvoked = cols[3];
+					final String sameClass = cols[4];
+					sameClassMap.put(method, sameClass.equals("1") ? true : false);
+				}
+			} finally {
+				br.close();
+			}
+			return sameClassMap;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private List<ICompilationUnit> findCandidateFiles(IProject project) throws CoreException {
 		final List<ICompilationUnit> files = new ArrayList<ICompilationUnit>();
 		project.accept(new IResourceVisitor() {
 			@Override
@@ -140,7 +217,7 @@ public class ProjectInliner {
 		return files;
 	}
 
-	private Iterable<String> findCandidateMethods(ICompilationUnit icu) {
+	private List<String> findCandidateMethods(ICompilationUnit icu) {
 		final List<String> methods = new ArrayList<String>();
 		CompilationUnit cu = Utils.compile(icu, true);
 		cu.accept(new ASTVisitor() {
@@ -157,7 +234,7 @@ public class ProjectInliner {
 		return methods;
 	}
 
-	private void applyBestInline(ICompilationUnit icu, String mKey) {
+	private boolean applyBestInline(ICompilationUnit icu, String mKey) {
 		List<MethodInvocationCandidate> list = findMethodInvocations(icu, mKey);
 //		Collections.sort(list, new Comparator<MethodInvocationCandidate>() {
 //			@Override
@@ -176,15 +253,16 @@ public class ProjectInliner {
 		for (MethodInvocationCandidate mic : list) {
 			boolean applied = applyInlineMethod(icu, mic);
 			if (applied) {
-				this.methodsInlined++;
-				String changedMethod = mic.getInvoker();
-				modifiedMethods.add(changedMethod);
-				break;
+				this.appliedInlines.add(mic);
+				modifiedMethods.add(mic.getInvoker());
+				inlinedMethods.add(mic.getInvoked());
+				return true;
 			}
 		}
+		return false;
 	}
 
-	private boolean isValid(String mKey, MethodDeclaration methodDeclaration) {
+	private boolean isInvokerValid(String mKey, MethodDeclaration methodDeclaration) {
 		if (this.modifiedMethods.contains(mKey)) {
 			// Não alterar métodos que já foram alterados; 
 			return false;
@@ -279,7 +357,7 @@ public class ProjectInliner {
 		
 		CompilationUnit cu = Utils.compile(icu, true);
 		MethodDeclaration methodDeclaration = findMethodDeclaration(cu, mKey);
-		if (!this.isValid(mKey, methodDeclaration)) {
+		if (!this.isInvokerValid(mKey, methodDeclaration)) {
 			return invocations;
 		}
 		
@@ -307,7 +385,8 @@ public class ProjectInliner {
 					final ITypeBinding invokedClass = invokedMethod.getDeclaringClass();
 					boolean sameClass = callerClass.equals(invokedClass);
 					//if (meetsJdtPreconditions(icu, cu, node.getStartPosition(), node.getLength())) {
-						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, invoker.getKey(), i, invokedKey, getInvokedMethodSize(invokedMethod), sameClass);
+						ICompilationUnit icuInvoked = (ICompilationUnit) invokedMethod.getJavaElement().getAncestor(IJavaElement.COMPILATION_UNIT);
+						MethodInvocationCandidate mic = new MethodInvocationCandidate(icu, invoker.getKey(), i, icuInvoked, invokedKey, getInvokedMethodSize(invokedMethod), sameClass);
 						invocations.add(mic);
 						//System.out.println(String.format("candidate %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 					//}
@@ -344,23 +423,28 @@ public class ProjectInliner {
 	}
 	
 	private boolean isInvokedValid(IMethodBinding caller, IMethodBinding invokedMethod) {
-		MethodData invokedData = mMap.get(invokedMethod.getKey());
+		String invokedKey = invokedMethod.getKey();
+		if (this.inlinedMethods.contains(invokedKey)) {
+			return false;
+		}
+		
+		MethodData invokedData = mMap.get(invokedKey);
 		MethodData callerData = mMap.get(caller.getKey());
 		if (invokedData == null || callerData == null) {
 			return false;
 		}
-		if (invokedData.size < this.minSize || callerData.size < this.minSize) {
+		if (invokedData.size < this.minSize || callerData.size <= this.minSize) {
 			return false;
 		}
 		double ratio = ((double) invokedData.size) / callerData.size;
-		if (ratio > 1.0) {
+		if (ratio > 2.0) {
 			return false;
 		}
-		if (ratio < 0.1) {
+		if (ratio < 0.25) {
 			return false;
 		}
 		
-		if (this.modifiedMethods.contains(invokedMethod.getKey())) {
+		if (this.modifiedMethods.contains(invokedKey)) {
 			return false;
 		}
 		final ITypeBinding callerClass = caller.getDeclaringClass();

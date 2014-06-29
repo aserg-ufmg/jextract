@@ -8,7 +8,7 @@ public class FakeDatabase extends Database {
 	}
 
 	@Override
-	public void insertKnownEmi(String project, String file, String method, String slice, int size) {
+	public void insertKnownEmi(String project, String file, String method, String slice, int size, Boolean sameClass) {
 	}
 
 	@Override

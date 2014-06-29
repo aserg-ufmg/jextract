@@ -25,8 +25,10 @@ public class Settings {
 	public double wV = 1.0;
 	private Coefficient coefficient = Coefficient.KUL;
 
-	private String typesToIgnore = "java.lang.*,java.util.*";
-	private String packagesToIgnore = "java,javax,com,org,br";
+	//private String typesToIgnore = "java.lang.*,java.util.*";
+	//private String packagesToIgnore = "java,javax,com,org,br";
+	private String typesToIgnore = "";
+	private String packagesToIgnore = "java,sun,com,org,br";
 
 	public Settings() {
 		this.id = "default";
