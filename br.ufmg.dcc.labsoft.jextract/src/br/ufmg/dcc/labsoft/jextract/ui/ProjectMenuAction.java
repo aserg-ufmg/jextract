@@ -49,7 +49,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			//List<Settings> settingsList = this.getSettingsList();
 			//List<Settings> settingsList = this.getSettingsList2();
-			List<Settings> settingsList = this.getCanonicalSettings();
+			//List<Settings> settingsList = this.getCanonicalSettings();
+			List<Settings> settingsList = this.getSettingsWeights();
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -134,16 +135,19 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 	private List<Settings> getSettingsWeights() {
 		List<Settings> list = new ArrayList<Settings>();
-		oneCoef(list, 1, 0, 0);
-		oneCoef(list, 0, 1, 0);
-		oneCoef(list, 0, 0, 1);
-		oneCoef(list, 1, 1, 0);
-		oneCoef(list, 1, 0, 1);
-		oneCoef(list, 1, 1, 1);
-		oneCoef(list, 9, 6, 4);
-		oneCoef(list, 100, 10, 1);
-		oneCoef(list, 4, 6, 9);
-		oneCoef(list, 1, 10, 100);
+//		oneCoef(list, 1, 0, 0);
+//		oneCoef(list, 0, 1, 0);
+//		oneCoef(list, 0, 0, 1);
+//		oneCoef(list, 1, 1, 0);
+//		oneCoef(list, 1, 0, 1);
+//		oneCoef(list, 1, 1, 1);
+//		oneCoef(list, 9, 6, 4);
+//		oneCoef(list, 100, 10, 1);
+//		oneCoef(list, 4, 6, 9);
+//		oneCoef(list, 1, 10, 100);
+		oneCoef(list, 2, 1, 1);
+		oneCoef(list, 1, 2, 1);
+		oneCoef(list, 1, 1, 2);
 	    return list;
     }
 	

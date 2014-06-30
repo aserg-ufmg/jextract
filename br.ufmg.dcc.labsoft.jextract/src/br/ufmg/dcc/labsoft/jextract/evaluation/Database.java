@@ -37,10 +37,10 @@ public class Database {
         }
 	}
 
-	public void insertKnownEmi(String project, String file, String method, String slice, int size, Boolean sameClass) {
+	public void insertKnownEmi(String project, String file, String method, String slice, int size, Boolean sameClass, int extractedSize) {
 		try {
 			PreparedStatement preparedStatement = this.connection.prepareStatement(
-					"INSERT INTO jextract.knownemi (kem_project, kem_file, kem_method, kem_slice, kem_methodsize, kem_sameclass) VALUES (?, ?, ?, ?, ?, ?)"
+					"INSERT INTO jextract.knownemi (kem_project, kem_file, kem_method, kem_slice, kem_methodsize, kem_sameclass, kem_extractedsize) VALUES (?, ?, ?, ?, ?, ?, ?)"
 					);
 			preparedStatement.setString(1, project);
 			preparedStatement.setString(2, file);
@@ -48,6 +48,7 @@ public class Database {
 			preparedStatement.setString(4, slice);
 			preparedStatement.setInt(5, size);
 			preparedStatement.setInt(6, Boolean.TRUE.equals(sameClass) ? 1 : 0);
+			preparedStatement.setInt(7, extractedSize);
 			preparedStatement.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

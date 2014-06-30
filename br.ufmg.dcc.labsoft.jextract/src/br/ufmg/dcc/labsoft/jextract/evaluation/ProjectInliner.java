@@ -57,6 +57,7 @@ import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
 import br.ufmg.dcc.labsoft.jextract.ranking.StatementsCountVisitor;
+import br.ufmg.dcc.labsoft.jextract.ranking.StatementsSliceCountVisitor;
 import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class ProjectInliner {
@@ -159,7 +160,8 @@ public class ProjectInliner {
 			try {
 				for (ExtractMethodRecomendation emr : emrList) {
 					Boolean sameClass = sameClassMap.get(emr.getMethodBindingKey());
-					db.insertKnownEmi(this.project.getName(), emr.getFilePath(), emr.getMethodBindingKey(), emr.getExtractionSlice().toString(), emr.getOriginalSize(), sameClass);
+					emr.getExtractedSize();
+					db.insertKnownEmi(this.project.getName(), emr.getFilePath(), emr.getMethodBindingKey(), emr.getExtractionSlice().toString(), emr.getOriginalSize(), sameClass, emr.getExtractedSize());
 				}
 			} finally {
 				db.close();
@@ -323,18 +325,22 @@ public class ProjectInliner {
 			Fragment fragment = new Fragment(start + sliceStart, start + sliceEnd, false);
 			boolean canExtract = Utils.canExtract(icu, fragment.start, fragment.length());
 			if (canExtract) {
+				ExtractionSlice slice = new ExtractionSlice(fragment);
 				ExtractMethodRecomendation emr = new ExtractMethodRecomendation(
 					emrList.size() + 1,
 					declaringType,
 					methodSignature,
-					new ExtractionSlice(fragment)
+					slice
 				);
 				emr.setSourceFile(icu);
 				emr.setMethodBindingKey(mKey);
-				StatementsCountVisitor counter = new StatementsCountVisitor();
-				methodDeclaration.accept(counter);
-				final int size = counter.getCount();
-				emr.setOriginalSize(size);
+				
+				StatementsSliceCountVisitor statementCounter = new StatementsSliceCountVisitor(slice);
+				methodDeclaration.accept(statementCounter);
+				emr.setOriginalSize(statementCounter.getCount());
+				emr.setDuplicatedSize(statementCounter.getDuplicatedCount());
+				emr.setExtractedSize(statementCounter.getExtractedCount());
+				
 				emrList.add(emr);
 			}
 		}
