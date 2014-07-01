@@ -1,22 +1,5 @@
 package gr.uom.java.jdeodorant.refactoring.views;
 
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-
 import gr.uom.java.ast.ASTReader;
 import gr.uom.java.ast.AbstractMethodDeclaration;
 import gr.uom.java.ast.ClassObject;
@@ -36,6 +19,24 @@ import gr.uom.java.jdeodorant.refactoring.Activator;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ASTSlice;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ASTSliceGroup;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractMethodRefactoring;
+
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.commands.operations.IOperationHistoryListener;
 import org.eclipse.core.commands.operations.OperationHistoryEvent;
@@ -102,6 +103,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 public class LongMethod extends ViewPart {
 	private TreeViewer treeViewer;
 	private Action identifyBadSmellsAction;
+	private Action evaluateAction;
 	private Action applyRefactoringAction;
 	private Action doubleClickAction;
 	private Action saveResultsAction;
@@ -110,6 +112,7 @@ public class LongMethod extends ViewPart {
 	private IPackageFragmentRoot selectedPackageFragmentRoot;
 	private IPackageFragment selectedPackageFragment;
 	private ICompilationUnit selectedCompilationUnit;
+	private List<IJavaProject> selectedProjects = new ArrayList<IJavaProject>();
 	private IType selectedType;
 	private IMethod selectedMethod;
 	private ASTSliceGroup[] sliceGroupTable;
@@ -246,6 +249,12 @@ public class LongMethod extends ViewPart {
 					selectedCompilationUnit = null;
 					selectedType = null;
 					selectedMethod = null;
+					selectedProjects.clear();
+					for (Object e : structuredSelection.toList()) {
+						if (e instanceof IJavaProject) {
+							selectedProjects.add((IJavaProject) e);
+						}
+					}
 				}
 				else if(element instanceof IPackageFragmentRoot) {
 					IPackageFragmentRoot packageFragmentRoot = (IPackageFragmentRoot)element;
@@ -462,6 +471,7 @@ public class LongMethod extends ViewPart {
 	
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(identifyBadSmellsAction);
+		manager.add(evaluateAction);
 		manager.add(applyRefactoringAction);
 		manager.add(saveResultsAction);
 		//manager.add(evolutionAnalysisAction);
@@ -482,6 +492,42 @@ public class LongMethod extends ViewPart {
 		identifyBadSmellsAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 			getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
 		identifyBadSmellsAction.setEnabled(false);
+
+		evaluateAction = new Action() {
+			public void run() {
+				for (IJavaProject prj : selectedProjects) {
+					System.out.println("Evaluating project " + prj.getProject().getName());
+					try {
+						selectedProject = prj;
+						CompilationUnitCache.getInstance().clearCache();
+						sliceGroupTable = getTable();
+						//treeViewer.setContentProvider(new ViewContentProvider());
+						//applyRefactoringAction.setEnabled(true);
+						//saveResultsAction.setEnabled(true);
+						File file = new File(prj.getProject().getLocation().toString() + "/jdeodorant.txt");
+						try {
+							BufferedWriter out = new BufferedWriter(new FileWriter(file));
+							for (ASTSliceGroup sg : sliceGroupTable) {
+								for (ASTSlice candidate : sg.getCandidates()) {
+									out.write(candidate.toJExtractFormat());
+									out.newLine();
+								}
+							}
+							out.close();
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					} catch (Exception e) {
+						System.out.println("ERROR: " + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		evaluateAction.setToolTipText("Evaluate Recommendations");
+		evaluateAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
+				getImageDescriptor(ISharedImages.IMG_ETOOL_PRINT_EDIT));
+		evaluateAction.setEnabled(true);
 		
 		saveResultsAction = new Action() {
 			public void run() {
@@ -870,7 +916,7 @@ public class LongMethod extends ViewPart {
 					TreeItem treeItem = tree.getItem(i);
 					ASTSliceGroup group = (ASTSliceGroup)treeItem.getData();
 					for(ASTSlice candidate : group.getCandidates()) {
-						out.write(candidate.toString());
+						out.write(candidate.toJExtractFormat());
 						out.newLine();
 					}
 				}

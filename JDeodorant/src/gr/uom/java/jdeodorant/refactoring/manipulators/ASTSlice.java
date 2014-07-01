@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
@@ -385,42 +389,64 @@ public class ASTSlice {
 	}
 
 	public String toString() {
-//		int numberOfSliceStatements = getSliceStatements().size();
-//		int numberOfRemovableStatements = getRemovableStatements().size();
-//		int numberOfDuplicatedStatements = numberOfSliceStatements - numberOfRemovableStatements;
-//		return getSourceTypeDeclaration().resolveBinding().getQualifiedName() + "\t" +
-//		getSourceMethodDeclaration().resolveBinding().toString() + "\t" +
-//		getLocalVariableCriterion().getName().getIdentifier() + "\t" +
-//		"B" + getBoundaryBlock().getId() + "\t" +
-//		numberOfDuplicatedStatements + "/" + numberOfSliceStatements;
 		int numberOfSliceStatements = getSliceStatements().size();
 		int numberOfRemovableStatements = getRemovableStatements().size();
 		int numberOfDuplicatedStatements = numberOfSliceStatements - numberOfRemovableStatements;
+		return getSourceTypeDeclaration().resolveBinding().getQualifiedName() + "\t" +
+		getSourceMethodDeclaration().resolveBinding().toString() + "\t" +
+		getLocalVariableCriterion().getName().getIdentifier() + "\t" +
+		"B" + getBoundaryBlock().getId() + "\t" +
+		numberOfDuplicatedStatements + "/" + numberOfSliceStatements;
+	}
 
+	public String toJExtractFormat() {
 		StringBuilder sb = new StringBuilder();
-		Object[] maps = this.getHighlightPositions();
-		Map<Position, String> annotationMap = (Map<Position, String>) maps[0];
-		Map<Position, Boolean> duplicationMap = (Map<Position, Boolean>) maps[1];
-		for(Map.Entry<Position, String> entry : annotationMap.entrySet()) {
-			Position position = entry.getKey();
-			Boolean duplication = duplicationMap.get(position);
-			if (duplication) {
+		for (Statement statement : getSliceStatements()) {
+			int start = statement.getStartPosition();
+			int length = statement.getLength();
+			boolean duplicated = duplicatedStatements.contains(statement);
+			boolean partialSelection = this.hasNotSelectedChildren(statement);
+			if (duplicated) {
 				sb.append('d');
 			} else {
 				sb.append('e');
 			}
-			sb.append(position.getOffset());
-			sb.append(':');
-			sb.append(position.getLength());
+			sb.append(start);
+			if (partialSelection) {
+				sb.append('~');
+			} else {
+				sb.append(':');
+			}
+			sb.append(length);
 			sb.append(';');
 		}
-
 		return iFile.getProjectRelativePath() + "\t" +
 		getSourceMethodDeclaration().resolveBinding().getKey() + "\t" +
-		//getLocalVariableCriterion().getName().getIdentifier() + "\t" +
-		//"B" + getBoundaryBlock().getId() + "\t" +
-		//numberOfDuplicatedStatements + "/" + numberOfSliceStatements + "\t" +
 		sb.toString();
+	}
+
+	private boolean hasNotSelectedChildren(Statement statement) {
+		NotSelectedASTVisitor visitor = new NotSelectedASTVisitor();
+		return visitor.hasNotSelectedChildren(statement);
+    }
+
+	private class NotSelectedASTVisitor extends ASTVisitor {
+		private boolean notSelectedFound = false;
+		@Override
+		public boolean preVisit2(ASTNode node) {
+			if (node instanceof CatchClause) {
+				return false;
+			}
+			if (node instanceof Statement && !(node instanceof Block) && !ASTSlice.this.sliceStatements.contains(node)) {
+				notSelectedFound = true;
+				return false;
+			}
+			return super.preVisit2(node);
+		}
+		public boolean hasNotSelectedChildren(Statement node) {
+			node.accept(this);
+			return this.notSelectedFound;
+		}
 	}
 
 	public Integer getUserRate() {
