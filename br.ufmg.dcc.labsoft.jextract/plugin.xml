@@ -38,6 +38,20 @@
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract.evaluateJdeodorant"
+               label="Evaluate JDeodorant results"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract.rewriteVisibility"
+               label="Change Visibility to Public"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
                id="br.ufmg.dcc.labsoft.jextract.inlineMethods"
                label="Introduce inline methods"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">

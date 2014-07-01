@@ -1,5 +1,10 @@
 package br.ufmg.dcc.labsoft.jextract.ranking;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 
 public class ExtractionSlice {
 
@@ -7,20 +12,39 @@ public class ExtractionSlice {
 
 	public static ExtractionSlice fromString(String sourceFragments) {
 		String[] frags = sourceFragments.split(";");
-		Fragment[] fragments = new Fragment[frags.length];
+		List<Fragment> fragments = new ArrayList<Fragment>(frags.length);
 		for (int i = 0; i < frags.length; i++) {
 			String frag = frags[i];
 			char typeFlag = frag.charAt(0);
 			boolean duplicate = typeFlag == 'd' ? true : false;
+			boolean partialSelection = false;
 			int middle = frag.indexOf(':');
+			if (middle < 0) {
+				middle = frag.indexOf('~');
+				partialSelection = true;
+			}
 			int start = Integer.parseInt(frag.substring(1, middle));
 			int length = Integer.parseInt(frag.substring(middle + 1));
 			
-			fragments[i] = new Fragment(start, start + length, duplicate);
+			fragments.add(new Fragment(start, start + length, duplicate, partialSelection));
 			
 			// e5373:27;e5411:7;e5429:44;
 		}
-		return new ExtractionSlice(fragments);
+		Collections.sort(fragments, new Comparator<Fragment>(){
+			@Override
+            public int compare(Fragment o1, Fragment o2) {
+	            return o1.start - o2.start;
+            }
+		});
+		for (int i = fragments.size() - 1; i >= 0; i--) {
+			for (int j = i - 1; j >= 0; j--) {
+				if (fragments.get(j).encloses(fragments.get(i))) {
+					fragments.remove(i);
+					break;
+				}
+			}
+		}
+		return new ExtractionSlice(fragments.toArray(new Fragment[fragments.size()]));
 	}
 
 	public ExtractionSlice(Fragment ... fragments) {
@@ -67,13 +91,24 @@ public class ExtractionSlice {
 		public final int start;
 		public final int end;
 		public final boolean duplicate;
+		public final boolean partialSelection;
 		public Fragment(int start, int end, boolean duplicate) {
 			this.start = start;
 			this.end = end;
 			this.duplicate = duplicate;
+			this.partialSelection = false;
+		}
+		public Fragment(int start, int end, boolean duplicate, boolean partialSelection) {
+			this.start = start;
+			this.end = end;
+			this.duplicate = duplicate;
+			this.partialSelection = partialSelection;
 		}
 		public int length() {
 			return this.end - this.start;
+		}
+		public boolean encloses(Fragment other) {
+			return !this.partialSelection && !other.partialSelection && this.start <= other.start && this.end >= other.end;
 		}
 	}
 
@@ -87,7 +122,7 @@ public class ExtractionSlice {
 		for (Fragment fragment : this.fragments) {
 			sb.append(fragment.duplicate ? 'd' : 'e');
 			sb.append("" + fragment.start);
-			sb.append(':');
+			sb.append(fragment.partialSelection ? '~' : ':');
 			sb.append("" + (fragment.end - fragment.start));
 			sb.append(';');
 		}
@@ -110,7 +145,7 @@ public class ExtractionSlice {
 	public Fragment getEnclosingFragment() {
 		Fragment first = this.fragments[0];
 		Fragment last = this.fragments[this.fragments.length - 1];
-		return new Fragment(first.start, last.end, false);
+		return new Fragment(first.start, last.end, false, false);
 	}
 
 }

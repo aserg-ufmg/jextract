@@ -11,6 +11,8 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
+import br.ufmg.dcc.labsoft.jextract.evaluation.DatabaseImpl;
+import br.ufmg.dcc.labsoft.jextract.evaluation.JDeodorantEmrEvaluator;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.generation.AggregatedExecutionReport;
@@ -32,9 +34,16 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		String actionId = action.getId();
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.inlineMethods")) {
 			for (IProject project : projects) {
-				new ProjectInliner(project).run();
+				new ProjectInliner(project).inlineMethods();
 			}
 			MessageDialog.openInformation(this.getShell(), "JExtract", "Inline methods complete.");
+			return;
+		}
+		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.rewriteVisibility")) {
+			for (IProject project : projects) {
+				new ProjectInliner(project).rewriteVisibility();
+			}
+			MessageDialog.openInformation(this.getShell(), "JExtract", "Rewrite Visibility Complete.");
 			return;
 		}
 
@@ -49,9 +58,13 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
 			//List<Settings> settingsList = this.getSettingsList();
 			//List<Settings> settingsList = this.getSettingsList2();
-			//List<Settings> settingsList = this.getCanonicalSettings();
-			List<Settings> settingsList = this.getSettingsWeights();
+			List<Settings> settingsList = this.getCanonicalSettings();
+			//List<Settings> settingsList = this.getSettingsWeights();
 			evaluateEmr(projects, settingsList);
+			return;
+		}
+		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluateJdeodorant")) {
+			evaluateJdeodorant(projects);
 			return;
 		}
 		
@@ -190,7 +203,7 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 	private void evaluateEmr(List<IProject> projects, List<Settings> settingsList) throws Exception {
-		Database db = new Database();
+		Database db = new DatabaseImpl();
 		//Database db = new FakeDatabase();
 		try {
 			for (Settings settings : settingsList) {
@@ -216,6 +229,32 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 		
 		MessageDialog.openInformation(this.getShell(), "JExtract", "Evaluation complete.");
+	}
+
+	private void evaluateJdeodorant(List<IProject> projects) throws Exception {
+		Database db = new DatabaseImpl();
+		//Database db = new FakeDatabase();
+		try {
+			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+			//Settings settings = dialog.getSettings();
+			Settings settings = new Settings("JDeodorant");
+			AggregatedExecutionReport arep = new AggregatedExecutionReport(settings);
+			for (IProject project : projects) {
+				ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
+				JDeodorantEmrEvaluator evaluator = new JDeodorantEmrEvaluator(settings, project, goldset, db);
+				ExecutionReport rep = evaluator.evaluateResults(recomendations);
+				arep.merge(rep);
+			}
+			//arep.printReport();
+			arep.printSummary();
+			if (projects.size() == 1) {
+				showResultView(recomendations, projects.get(0), settings);
+			}
+		} finally {
+			db.close();
+		}
+		
+		MessageDialog.openInformation(this.getShell(), "JExtract", "JDeodorant evaluation complete.");
 	}
 
 }

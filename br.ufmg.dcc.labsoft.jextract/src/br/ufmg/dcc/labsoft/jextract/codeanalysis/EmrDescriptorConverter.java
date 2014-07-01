@@ -36,7 +36,7 @@ public class EmrDescriptorConverter {
 	}
 
 	private void convertAndAdd(OffsetBasedEmrDescriptor emr, List<StatementBasedEmrDescriptor> result) {
-		ICompilationUnit icu = this.parser.getICompilationUnit(this.project, emr.getFilePath());
+		ICompilationUnit icu = this.parser.getICompilationUnit(this.project.getProject(), emr.getFilePath());
 		CompilationUnit cu = this.parser.getCompilationUnit(icu, true);
 		MethodDeclaration methodDeclaration = (MethodDeclaration) cu.findDeclaringNode(emr.getMethodBindingKey());
 		MethodModel methodModel = MethodModelBuilder.create(icu, methodDeclaration);

@@ -89,17 +89,25 @@ public class ProjectInliner {
 		this.random = new Random(RANDOM_SEED);
 	}
 
-	public void run() throws Exception {
+	public void inlineMethods() throws Exception {
 		this.inlineAll();
 		this.writeInlineLog();
 		this.extractGoldSet();
 	}
 
-	private void inlineAll() throws CoreException, Exception {
-	    List<ICompilationUnit> files = this.findCandidateFiles(project);
+	public void rewriteVisibility() throws Exception {
+		List<ICompilationUnit> files = this.findCandidateFiles(project);
 		VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
 		for (ICompilationUnit icu : files) {
 			rewriter.rewrite(icu);
+		}
+	}
+	
+	private void inlineAll() throws CoreException, Exception {
+	    List<ICompilationUnit> files = this.findCandidateFiles(project);
+		//VisibilityRewriter rewriter = new VisibilityRewriter(this.pm);
+		for (ICompilationUnit icu : files) {
+			//rewriter.rewrite(icu);
 			CompilationUnit cu = Utils.compile(icu, true);
 			Iterable<String> methodKeys = this.findCandidateMethods(icu);
 			for (String mKey : methodKeys) {
@@ -156,7 +164,8 @@ public class ProjectInliner {
 		}
 		Map<String, Boolean> sameClassMap = this.readSameClassMap();
 		if (this.saveToDatabase ) {
-			Database db = new Database();
+			Database db = new DatabaseImpl();
+			//Database db = new FakeDatabase();
 			try {
 				for (ExtractMethodRecomendation emr : emrList) {
 					Boolean sameClass = sameClassMap.get(emr.getMethodBindingKey());
@@ -446,7 +455,7 @@ public class ProjectInliner {
 		if (ratio > 2.0) {
 			return false;
 		}
-		if (ratio < 0.25) {
+		if (ratio < 0.1) {
 			return false;
 		}
 		
@@ -523,7 +532,6 @@ public class ProjectInliner {
 					workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
 					workingCopy.commitWorkingCopy(false, this.pm);
 					workingCopy.discardWorkingCopy();
-					System.out.println(String.format("inlined %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 					success = true;
 				}
 			}
@@ -531,6 +539,7 @@ public class ProjectInliner {
 			// Complete the marker
 			if (success) {
 				this.insertOpenMarker(icu);
+				System.out.println(String.format("INLINED %s %s <= %s %d", mic.isSameClass() ? "S" : "D", mic.getInvoker(), mic.getInvoked(), mic.getSize()));
 				return true;
 			} else {
 				ICompilationUnit workingCopy = icu.getWorkingCopy(this.pm);
@@ -538,6 +547,7 @@ public class ProjectInliner {
 				workingCopy.reconcile(ICompilationUnit.NO_AST, false, null, null);
 				workingCopy.commitWorkingCopy(false, this.pm);
 				workingCopy.discardWorkingCopy();
+				//System.out.println("FAILED " + mic.getInvoker());
 				return false;
 			}
 
