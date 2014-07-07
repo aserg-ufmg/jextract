@@ -27,6 +27,7 @@ public class Settings {
 
 	//private String typesToIgnore = "java.lang.*,java.util.*";
 	//private String packagesToIgnore = "java,javax,com,org,br";
+	//private String typesToIgnore = "java.lang.Object,java.lang.String,java.lang.Boolean,java.lang.Number,java.lang.Integer,java.lang.Long,java.lang.Double,java.lang.Float";
 	private String typesToIgnore = "";
 	private String packagesToIgnore = "java,sun,com,org,br";
 

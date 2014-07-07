@@ -324,14 +324,18 @@ public class ProjectInliner {
 		String methodSource = icu.getSource().substring(start, start + methodDeclaration.getLength());
 		int sliceStart = methodSource.indexOf(MARKER_OPEN) + MARKER_OPEN.length();
 		int sliceEnd = methodSource.indexOf(MARKER_CLOSE);
+		
 		if (sliceStart >= 0 && sliceEnd > sliceStart) {
-			while (this.isWhiteSpace(methodSource.charAt(sliceStart))) {
-				sliceStart++;
-			}
-			while (this.isWhiteSpace(methodSource.charAt(sliceEnd - 1))) {
-				sliceEnd--;
-			}
-			Fragment fragment = new Fragment(start + sliceStart, start + sliceEnd, false);
+			int[] startEnd = this.normalizeStartEndPositions(start + sliceStart, start + sliceEnd, methodDeclaration);
+			int sliceStart2 = startEnd[0];
+			int sliceEnd2 = startEnd[1];
+//			while (this.isWhiteSpace(methodSource.charAt(sliceStart))) {
+//				sliceStart++;
+//			}
+//			while (this.isWhiteSpace(methodSource.charAt(sliceEnd - 1))) {
+//				sliceEnd--;
+//			}
+			Fragment fragment = new Fragment(sliceStart2, sliceEnd2, false);
 			boolean canExtract = Utils.canExtract(icu, fragment.start, fragment.length());
 			if (canExtract) {
 				ExtractionSlice slice = new ExtractionSlice(fragment);
@@ -350,10 +354,58 @@ public class ProjectInliner {
 				emr.setDuplicatedSize(statementCounter.getDuplicatedCount());
 				emr.setExtractedSize(statementCounter.getExtractedCount());
 				
-				emrList.add(emr);
+				if (emr.getExtractedSize() >= this.minSize) {
+					emrList.add(emr);
+				}
 			}
 		}
 	}
+
+	private int[] normalizeStartEndPositions(int sliceStart, int sliceEnd, MethodDeclaration methodDeclaration) {
+		EnclosedStatementsVisitor vis = new EnclosedStatementsVisitor(sliceStart, sliceEnd);
+		methodDeclaration.accept(vis);
+		return new int[]{vis.getActualStart(), vis.getActualEnd()};
+    }
+
+	private class EnclosedStatementsVisitor extends ASTVisitor {
+		private final int start;
+		private final int end;
+		private int actualStart = Integer.MAX_VALUE;
+		private int actualEnd = 0;
+
+        public EnclosedStatementsVisitor(int start, int end) {
+	        super();
+	        this.start = start;
+	        this.end = end;
+        }
+
+		@Override
+		public final void preVisit(ASTNode node) {
+			if (node instanceof Statement) {
+				final int nodeStart = node.getStartPosition();
+				final int nodeEnd = nodeStart + node.getLength();
+				if (nodeStart >= this.start && nodeEnd <= this.end) {
+					int curDiffStart = this.actualStart - this.start;
+					int newDiffStart = nodeStart - this.start;
+					if (newDiffStart < curDiffStart) {
+						this.actualStart = nodeStart;
+					}
+					
+					int curDiffEnd = this.end - this.actualEnd;
+					int newDiffEnd = this.end - nodeEnd;
+					if (newDiffEnd < curDiffEnd) {
+						this.actualEnd = nodeEnd;
+					}
+				}
+			}
+		}
+		public int getActualStart() {
+			return this.actualStart;
+		}
+		public int getActualEnd() {
+			return this.actualEnd;
+		}
+	} 
 
 	private boolean isWhiteSpace(char c) {
 		switch (c) {

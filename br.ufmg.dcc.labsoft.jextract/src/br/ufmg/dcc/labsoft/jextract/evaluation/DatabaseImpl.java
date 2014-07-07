@@ -8,7 +8,7 @@ import java.sql.SQLException;
 public class DatabaseImpl extends Database {
 
 	private Connection connection = null;
-	private final String schema = "qualitas3";
+	private final String schema = "qualitas2";
 
 	public DatabaseImpl() {
 		try {

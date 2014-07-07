@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
@@ -56,10 +61,13 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
-			//List<Settings> settingsList = this.getSettingsList();
+			List<Settings> settingsList = this.getSettingsListCoef();
 			//List<Settings> settingsList = this.getSettingsList2();
-			List<Settings> settingsList = this.getCanonicalSettings();
+			//List<Settings> settingsList = this.getCanonicalSettings();
+			//List<Settings> settingsList = this.getFullSettings();
 			//List<Settings> settingsList = this.getSettingsWeights();
+			//settingsList.addAll(c);
+			settingsList.addAll(this.getSettingsWeights());
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -72,7 +80,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.showGoldset")) {
 			EmrFileReader reader = new EmrFileReader();
 			List<ExtractMethodRecomendation> recomendations = reader.read(project.getLocation().toString() + "/goldset.txt");
-			//fillEmrData(recomendations, project);
+			
+			fillEmrData(recomendations, project);
 			showResultView(recomendations, project, new Settings());
 			return;
 		}
@@ -83,6 +92,14 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 	}
 
+	private void fillEmrData(List<ExtractMethodRecomendation> recomendations, IProject project) throws CoreException {
+		IJavaProject javaProject = JavaCore.create(project);
+		for (ExtractMethodRecomendation rec : recomendations) {
+			IType findType = javaProject.findType(rec.className);
+			ICompilationUnit icu = findType.getCompilationUnit();
+			rec.setSourceFile(icu);
+		}
+    }
 
 	private List<Settings> getCanonicalSettings() {
 		List<Settings> list = new ArrayList<Settings>();
@@ -95,7 +112,16 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	    return list;
     }
 
-	private List<Settings> getSettingsList() {
+	private List<Settings> getFullSettings() {
+		List<Settings> list = new ArrayList<Settings>();
+		Settings kul = new Settings("full");
+		kul.setMaxPerMethod(2048 * 4);
+		kul.setCoefficient(Coefficient.KUL);
+		list.add(kul);
+	    return list;
+    }
+	
+	private List<Settings> getSettingsListCoef() {
 		List<Settings> list = new ArrayList<Settings>();
 		
 		Settings jac = new Settings("JAC");
@@ -148,22 +174,22 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 
 	private List<Settings> getSettingsWeights() {
 		List<Settings> list = new ArrayList<Settings>();
-//		oneCoef(list, 1, 0, 0);
-//		oneCoef(list, 0, 1, 0);
-//		oneCoef(list, 0, 0, 1);
-//		oneCoef(list, 1, 1, 0);
-//		oneCoef(list, 1, 0, 1);
-//		oneCoef(list, 1, 1, 1);
-//		oneCoef(list, 9, 6, 4);
-//		oneCoef(list, 100, 10, 1);
-//		oneCoef(list, 4, 6, 9);
-//		oneCoef(list, 1, 10, 100);
+		oneCoef(list, 1, 0, 0);
+		oneCoef(list, 0, 1, 0);
+		oneCoef(list, 0, 0, 1);
+		oneCoef(list, 1, 1, 0);
+		oneCoef(list, 1, 0, 1);
+		oneCoef(list, 1, 1, 1);
+		oneCoef(list, 9, 6, 4);
+		oneCoef(list, 100, 10, 1);
+		oneCoef(list, 4, 6, 9);
+		oneCoef(list, 1, 10, 100);
 		oneCoef(list, 2, 1, 1);
 		oneCoef(list, 1, 2, 1);
 		oneCoef(list, 1, 1, 2);
 	    return list;
     }
-	
+
 	private void oneCoef(List<Settings> settings, int wv, int wt, int wp) {
 		String weights = String.format("%d-%d-%d", wv, wt, wp);
 		Coefficient c = Coefficient.KUL;
