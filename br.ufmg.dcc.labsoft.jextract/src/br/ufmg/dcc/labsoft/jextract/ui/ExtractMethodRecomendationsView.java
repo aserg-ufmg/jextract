@@ -7,7 +7,6 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
@@ -30,7 +29,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -110,6 +108,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		addColumnRank();
 		addColumnOriginalSize().getColumn();
 		addColumnExtractedSize();
+		addColumnDiffSize();
 		
 		addColumnScore().getColumn();
 		addColumnExplanation();
@@ -179,6 +178,15 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 			@Override
 			public String getColumnText(ExtractMethodRecomendation element) {
 				return element.getExtractedSize() + "";
+			}
+		}, 100);
+	}
+
+	private TableViewerColumn addColumnDiffSize() {
+		return addColumn("Diff Size", new EmrTableColumnLabelProvider() {
+			@Override
+			public String getColumnText(ExtractMethodRecomendation element) {
+				return element.getDiffSize() + "";
 			}
 		}, 100);
 	}

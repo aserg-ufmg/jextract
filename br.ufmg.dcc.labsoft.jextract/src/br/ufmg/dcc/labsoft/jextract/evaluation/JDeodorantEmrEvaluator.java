@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -41,6 +43,8 @@ public class JDeodorantEmrEvaluator {
 	public ExecutionReport evaluateResults(List<ExtractMethodRecomendation> recomendations) throws IOException {
 		File file = new File(project.getLocation().toString() + "/jdeodorant.txt");
 		BufferedReader br = new BufferedReader(new FileReader(file));
+		Set<ExtractMethodRecomendation> dejavu = new HashSet<ExtractMethodRecomendation>();
+		
 		try {
 			String line;
 			int id = 1;
@@ -66,10 +70,13 @@ public class JDeodorantEmrEvaluator {
 				emr.setOriginalSize(statementCounter.getCount());
 				emr.setDuplicatedSize(statementCounter.getDuplicatedCount());
 				emr.setExtractedSize(statementCounter.getExtractedCount());
+				
 				emr.setScore(0.0);
 				
-				if (this.goldset.isMethodAvailable(emr)) {
+				if (this.goldset.isMethodAvailable(emr) && !dejavu.contains(emr)) {
+					emr.setDiffSize(this.goldset.getDiff(emr, methodDeclaration));
 					recomendations.add(emr);
+					dejavu.add(emr);
 					this.rep.reportEmrAtRank(emr, 0);
 				}
 			}

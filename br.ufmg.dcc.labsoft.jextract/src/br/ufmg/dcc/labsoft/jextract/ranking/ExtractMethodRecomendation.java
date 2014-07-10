@@ -13,6 +13,7 @@ public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 	public final String method;
 	private int duplicatedSize;
 	private int extractedSize;
+	private int diffSize = -1;
 	private int originalSize;
 	private int reorderedSize = 0;
 	final ExtractionSlice slice;
@@ -128,6 +129,14 @@ public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 
 	public void setExtractedSize(int extractedSize) {
 		this.extractedSize = extractedSize;
+	}
+
+	public int getDiffSize() {
+		return this.diffSize;
+	}
+
+	public void setDiffSize(int diffSize) {
+		this.diffSize = diffSize;
 	}
 
 	public int getReorderedSize() {

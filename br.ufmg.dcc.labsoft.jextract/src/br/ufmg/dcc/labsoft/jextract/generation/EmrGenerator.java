@@ -174,6 +174,9 @@ public class EmrGenerator {
 		recomendation.setReorderedSize(reorderedSize);
 
 		recomendation.setOk(true);
+		if (this.goldset != null) {
+			recomendation.setDiffSize(this.goldset.getDiff(recomendation, model.getAstNode()));
+		}
 
 		this.recomendationsForMethod.add(recomendation);
 		return recomendation;

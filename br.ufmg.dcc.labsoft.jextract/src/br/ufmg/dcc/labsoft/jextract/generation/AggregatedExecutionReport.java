@@ -55,17 +55,27 @@ public class AggregatedExecutionReport {
     	System.out.println();
     	System.out.print("precision: ");
     	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-			double precision = ((double) this.foundAt[i]) / this.totalAt[i];
+			double precision = precision(i);
 			System.out.printf("%.3f ", precision);
 		}
     	System.out.println();
     	System.out.print("recall:    ");
     	for (int i = 0; i < this.settings.getMaxPerMethod(); i++) {
-    		double recall = ((double) this.foundAt[i]) / this.totalOracleSize;
+    		double recall = recall(i);
     		System.out.printf("%.3f ", recall);
     	}
     	System.out.println();
     	System.out.println("----------------------------");
+    }
+
+	private double recall(int i) {
+	    double recall = ((double) this.foundAt[i]) / this.totalOracleSize;
+	    return recall;
+    }
+
+	private double precision(int i) {
+	    double precision = ((double) this.foundAt[i]) / this.totalAt[i];
+	    return precision;
     }
 	
 	public void printSummary() {
@@ -74,9 +84,13 @@ public class AggregatedExecutionReport {
 		System.out.printf("%5d ", this.totalOracleSize);
 		System.out.print('\t');
 		System.out.printf("%.3f ", ((double) this.foundAt[0]) / this.totalOracleSize);
+		System.out.printf("%5d ", this.totalAt[0]);
 		System.out.print('\t');
 		System.out.printf("%.3f ", ((double) this.foundAt[1]) / this.totalOracleSize);
+		System.out.printf("%5d ", this.totalAt[1]);
+		System.out.print('\t');
 		System.out.printf("%.3f ", ((double) this.foundAt[2]) / this.totalOracleSize);
+		System.out.printf("%5d ", this.totalAt[2]);
 		System.out.println();
 	}
 }

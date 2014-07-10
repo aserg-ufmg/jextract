@@ -17,6 +17,7 @@ import org.eclipse.swt.widgets.Display;
 
 import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
 import br.ufmg.dcc.labsoft.jextract.evaluation.DatabaseImpl;
+import br.ufmg.dcc.labsoft.jextract.evaluation.FakeDatabase;
 import br.ufmg.dcc.labsoft.jextract.evaluation.JDeodorantEmrEvaluator;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectInliner;
 import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
@@ -61,13 +62,13 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextract.evaluate")) {
-			List<Settings> settingsList = this.getSettingsListCoef();
+			//List<Settings> settingsList = this.getSettingsListCoef();
 			//List<Settings> settingsList = this.getSettingsList2();
-			//List<Settings> settingsList = this.getCanonicalSettings();
+			List<Settings> settingsList = this.getCanonicalSettings();
 			//List<Settings> settingsList = this.getFullSettings();
 			//List<Settings> settingsList = this.getSettingsWeights();
 			//settingsList.addAll(c);
-			settingsList.addAll(this.getSettingsWeights());
+			//settingsList.addAll(this.getSettingsWeights());
 			evaluateEmr(projects, settingsList);
 			return;
 		}
@@ -229,8 +230,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 	private void evaluateEmr(List<IProject> projects, List<Settings> settingsList) throws Exception {
-		Database db = new DatabaseImpl();
-		//Database db = new FakeDatabase();
+		//Database db = new DatabaseImpl();
+		Database db = new FakeDatabase();
 		try {
 			for (Settings settings : settingsList) {
 				List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
@@ -244,8 +245,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 					ExecutionReport rep = generator.generateRecomendations(project);
 					arep.merge(rep);
 				}
-				//arep.printReport();
-				arep.printSummary();
+				arep.printReport();
+				//arep.printSummary();
 				if (projects.size() == 1 && settingsList.size() == 1) {
 					showResultView(recomendations, projects.get(0), settings);
 				}
@@ -258,8 +259,8 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 	}
 
 	private void evaluateJdeodorant(List<IProject> projects) throws Exception {
-		Database db = new DatabaseImpl();
-		//Database db = new FakeDatabase();
+		//Database db = new DatabaseImpl();
+		Database db = new FakeDatabase();
 		try {
 			List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
 			//Settings settings = dialog.getSettings();
