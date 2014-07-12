@@ -164,8 +164,7 @@ public class ProjectInliner {
 		}
 		Map<String, Boolean> sameClassMap = this.readSameClassMap();
 		if (this.saveToDatabase ) {
-			Database db = new DatabaseImpl();
-			//Database db = new FakeDatabase();
+			Database db = Database.getInstance();
 			try {
 				for (ExtractMethodRecomendation emr : emrList) {
 					Boolean sameClass = sameClassMap.get(emr.getMethodBindingKey());

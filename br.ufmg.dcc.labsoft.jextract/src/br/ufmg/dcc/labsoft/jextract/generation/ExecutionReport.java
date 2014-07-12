@@ -62,7 +62,7 @@ public class ExecutionReport {
 		}
 		
 		if (this.db != null) {
-			this.db.insertEmi(this.settings.getId(), this.project.getName(), rec.getFilePath(), rec.getMethodBindingKey(), rec.getExtractionSlice().toString(), i, rec.getScore(), inOracle);
+			this.db.insertEmi(this.settings.getId(), this.project.getName(), rec.getFilePath(), rec.getMethodBindingKey(), rec.getExtractionSlice().toString(), i, rec.getScore(), inOracle, rec.getDiffSize());
 		}
 		return inOracle;
 	}

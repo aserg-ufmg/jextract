@@ -5,12 +5,13 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class DatabaseImpl extends Database {
+class DatabaseImpl extends Database {
 
 	private Connection connection = null;
-	private final String schema = "qualitas2";
+	private final String schema;
 
-	public DatabaseImpl() {
+	public DatabaseImpl(String schema) {
+		this.schema = schema;
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			this.connection = DriverManager.getConnection("jdbc:mysql://localhost/" + schema + "?user=danilofes&password=oefudfs2#");
@@ -19,10 +20,10 @@ public class DatabaseImpl extends Database {
 		}
 	}
 
-	public void insertEmi(String confid, String project, String file, String method, String slice, int rank, double score, boolean match) {
+	public void insertEmi(String confid, String project, String file, String method, String slice, int rank, double score, boolean match, int diff) {
 		try {
 			PreparedStatement preparedStatement = this.connection.prepareStatement(
-					"INSERT INTO " + schema + ".emi (emi_confid, emi_project, emi_file, emi_method, emi_rank, emi_slice, emi_score, emi_match) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+					"INSERT INTO " + schema + ".emi (emi_confid, emi_project, emi_file, emi_method, emi_rank, emi_slice, emi_score, emi_match, emi_diff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 					);
 			preparedStatement.setString(1, confid);
 			preparedStatement.setString(2, project);
@@ -32,6 +33,7 @@ public class DatabaseImpl extends Database {
 			preparedStatement.setString(6, slice);
 			preparedStatement.setDouble(7, score);
 			preparedStatement.setInt(8, match ? 1 : 0);
+			preparedStatement.setInt(9, diff);
 			preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
