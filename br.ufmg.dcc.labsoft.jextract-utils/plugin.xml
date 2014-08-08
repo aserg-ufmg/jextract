@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="br.ufmg.dcc.labsoft.jextract-utils.contribution1"
+            objectClass="org.eclipse.core.resources.IProject">
+         <menu
+               id="br.ufmg.dcc.labsoft.jextract-utils.projectMenu"
+               label="JExtract Utils"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract-utils.showGoldset"
+               label="Show Oracle recomendations"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract-utils.evaluate"
+               label="Evaluate using oracle"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract-utils.evaluateJdeodorant"
+               label="Evaluate JDeodorant results"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract-utils.rewriteVisibility"
+               label="Change Visibility to Public"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract-utils.inlineMethods"
+               label="Introduce inline methods"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextract-utils.extractGoldSet"
+               label="Extract gold set"
+               menubarPath="br.ufmg.dcc.labsoft.jextract-utils.projectMenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   
+</plugin>
