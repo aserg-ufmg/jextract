@@ -2,7 +2,6 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -10,9 +9,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
@@ -23,8 +20,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 
-import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
-import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.Placement;
@@ -40,7 +35,6 @@ public class EmrGenerator {
 	private final List<ExtractMethodRecomendation> recomendations;
 	private List<ExtractMethodRecomendation> recomendationsForMethod;
 	private EmrRecommender recommender;
-	private ProjectRelevantSet goldset = null;
 	private EmrScoringFunction scoringFn;
 	
 	private int recursiveCalls = 0;
@@ -59,12 +53,11 @@ public class EmrGenerator {
 		this.scoringFn = EmrScoringFunction.getInstance(settings);
 	}
 
-	public void setGoldset(IProject project, ProjectRelevantSet goldset, Database db) {
-		this.goldset = goldset;
-		this.recommender.setGoldset(project, goldset, db);
+	public EmrRecommender getRecommender() {
+		return this.recommender;
 	}
-
-	public ExecutionReport generateRecomendations(IProject project) throws Exception {
+	
+	public final void generateRecomendations(IProject project) throws Exception {
 		project.accept(new IResourceVisitor() {
 			@Override
 			public boolean visit(IResource resource) throws CoreException {
@@ -74,33 +67,21 @@ public class EmrGenerator {
 						unit.getSource();
 					} catch (Exception e) {
 						return true;
-						// ignora arquivo se não conseguiu pegar o source
+						// ICompilationUnit ignored when its source is not available
 					}
 					analyseMethods(unit, null);
 				}
 				return true;
 			}
 		});
-		return this.recommender.getReport();
 	}
 
-	public ExecutionReport generateRecomendations(IProject project, ProjectRelevantSet goldset, Database db) throws Exception {
-		this.setGoldset(project, goldset, db);
-		IJavaProject jp = (IJavaProject) JavaCore.create(project);
-		Set<String> classes = goldset.getCoveredClasses();
-		for (String className : classes) {
-			IType type = jp.findType(className);
-			analyseMethods(type.getCompilationUnit(), null);
-		}
-		return this.recommender.getReport();
-	}
-
-	public void generateRecomendations(IMethod method) throws Exception {
+	public final void generateRecomendations(IMethod method) throws Exception {
 		analyseMethods(method.getCompilationUnit(), method);
 	}
 
 	// use ASTParse to parse string
-	private void analyseMethods(final ICompilationUnit src, final IMethod onlyThisMethod) throws JavaModelException {
+	protected final void analyseMethods(final ICompilationUnit src, final IMethod onlyThisMethod) throws JavaModelException {
 
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
 		parser.setSource(src);
@@ -172,28 +153,22 @@ public class EmrGenerator {
 		recomendation.setMethodBindingKey(model.getAstNode().resolveBinding().getKey());
 		recomendation.setOriginalSize(model.getTotalSize());
 		recomendation.setReorderedSize(reorderedSize);
-
 		recomendation.setOk(true);
-		if (this.goldset != null) {
-			recomendation.setDiffSize(this.goldset.getDiff(recomendation, model.getAstNode()));
-		}
+		this.fillRecommendationInfo(recomendation, model);
 
 		this.recomendationsForMethod.add(recomendation);
 		return recomendation;
     }
 
-	private void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
-		IMethodBinding methodBinding = methodDeclaration.resolveBinding();
-		final String methodSignature = methodBinding.toString();
-		final String declaringType = methodBinding.getDeclaringClass().getQualifiedName();
+	protected void fillRecommendationInfo(ExtractMethodRecomendation recomendation, MethodModel model) {
+		//
+	}
 
-		if (this.goldset != null && !this.goldset.isMethodAvailable(declaringType, methodSignature)) {
+	private void analyseMethod(final ICompilationUnit src, MethodDeclaration methodDeclaration) {
+		if (this.ignoreMethod(src, methodDeclaration)) {
 			return;
 		}
-		
-		String key = declaringType + "\t" + methodSignature;
-		//System.out.print("Analysing recomendations for " + key + " ... ");
-		long time1 = System.currentTimeMillis();
+//		long time1 = System.currentTimeMillis();
 
 		final MethodModel emrMethod = MethodModelBuilder.create(src, methodDeclaration);
 		this.recomendationsForMethod = new ArrayList<ExtractMethodRecomendation>();
@@ -202,9 +177,13 @@ public class EmrGenerator {
 		//System.out.println("done in " + (System.currentTimeMillis() - time1) + " ms.");
 		
 		//System.out.print("Ranking ... ");
-		long time2 = System.currentTimeMillis();
-		this.recomendations.addAll(this.recommender.rankAndFilterForMethod(src, methodDeclaration, this.recomendationsForMethod));
+//		long time2 = System.currentTimeMillis();
+		this.recomendations.addAll(this.getRecommender().rankAndFilterForMethod(src, methodDeclaration, this.recomendationsForMethod));
 		//System.out.println("done in " + (System.currentTimeMillis() - time2) + " ms.");
+	}
+
+	protected boolean ignoreMethod(ICompilationUnit src, MethodDeclaration methodDeclaration) {
+		return false;
 	}
 
 	private void init(int i) {

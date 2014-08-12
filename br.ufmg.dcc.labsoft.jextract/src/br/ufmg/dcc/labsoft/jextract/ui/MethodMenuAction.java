@@ -22,7 +22,7 @@ public class MethodMenuAction extends ObjectMenuAction<IMethod> {
 	}
 
 	@Override
-	void handleAction(IAction action, List<IMethod> methods) throws Exception {
+	public void handleAction(IAction action, List<IMethod> methods) throws Exception {
 		IMethod method = methods.get(0);
 		IProject project = method.getJavaProject().getProject();
 

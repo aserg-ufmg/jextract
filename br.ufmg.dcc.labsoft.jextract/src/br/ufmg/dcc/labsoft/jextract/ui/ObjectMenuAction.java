@@ -19,7 +19,7 @@ import org.eclipse.ui.PlatformUI;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 
-abstract class ObjectMenuAction<T> implements IObjectActionDelegate {
+public abstract class ObjectMenuAction<T> implements IObjectActionDelegate {
 
 	private Shell shell;
 
@@ -73,12 +73,11 @@ abstract class ObjectMenuAction<T> implements IObjectActionDelegate {
 		}
 	}
 
-	abstract void handleAction(IAction action, List<T> item) throws Exception;
+	public abstract void handleAction(IAction action, List<T> item) throws Exception;
 
 	protected void showResultView(List<ExtractMethodRecomendation> recomendations, IProject project, Settings settings) throws PartInitException {
 		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage
-		        .showView("br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView");
+		ExtractMethodRecomendationsView view = (ExtractMethodRecomendationsView) activePage.showView("br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView");
 		view.setRecomendations(recomendations, project, settings);
 
 		if (recomendations.isEmpty()) {

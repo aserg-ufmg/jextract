@@ -1,7 +1,9 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 
 
 public class AggregatedExecutionReport {

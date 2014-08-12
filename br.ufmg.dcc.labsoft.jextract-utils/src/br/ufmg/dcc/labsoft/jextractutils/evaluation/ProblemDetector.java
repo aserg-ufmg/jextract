@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.evaluation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import org.eclipse.jdt.core.IProblemRequestor;
 import org.eclipse.jdt.core.compiler.IProblem;

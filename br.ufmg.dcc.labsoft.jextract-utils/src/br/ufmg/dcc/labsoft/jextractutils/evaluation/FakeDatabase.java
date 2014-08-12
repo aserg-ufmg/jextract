@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.evaluation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 
 class FakeDatabase extends Database {

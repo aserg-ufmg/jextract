@@ -42,7 +42,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.generation.EmrScoringFunction;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileExporter;
@@ -84,12 +83,6 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	public void setRecomendations(List<ExtractMethodRecomendation> recomendations, IProject project, Settings settings) {
 		this.recomendations = recomendations;
 		this.settings = settings;
-		ProjectRelevantSet set = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
-		for (ExtractMethodRecomendation rec : recomendations) {
-			rec.setRelevant(set.contains(rec));
-			rec.setSimilar(set.containsReduced(rec));
-			rec.setAvailableInGoldSet(set.isMethodAvailable(rec));
-		}
 		this.viewer.setInput(recomendations);
 	}
 

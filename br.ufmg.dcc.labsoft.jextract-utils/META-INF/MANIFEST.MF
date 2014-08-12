@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: jextract-utils
-Bundle-SymbolicName: br.ufmg.dcc.labsoft.jextract-utils;singleton:=true
+Bundle-SymbolicName: br.ufmg.dcc.labsoft.jextractutils;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: br.ufmg.dcc.labsoft.jextract_utils.Activator
+Bundle-Activator: br.ufmg.dcc.labsoft.jextractutils.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.ltk.core.refactoring,
@@ -18,3 +18,5 @@ Require-Bundle: org.eclipse.ui,
  br.ufmg.dcc.labsoft.jextract
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: lib/mysql-connector-java-5.1.31-bin.jar,
+ .

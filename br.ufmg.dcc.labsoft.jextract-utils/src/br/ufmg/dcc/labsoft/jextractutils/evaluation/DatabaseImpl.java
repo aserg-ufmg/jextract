@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.evaluation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -10,12 +10,12 @@ class DatabaseImpl extends Database {
 	private Connection connection = null;
 	private final String schema;
 
-	public DatabaseImpl(String schema) {
+	public DatabaseImpl(String schema) throws SQLException {
 		this.schema = schema;
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			this.connection = DriverManager.getConnection("jdbc:mysql://localhost/" + schema + "?user=danilofes&password=oefudfs2#");
-		} catch (Exception e) {
+		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.evaluation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import java.io.IOException;
 import java.util.HashMap;

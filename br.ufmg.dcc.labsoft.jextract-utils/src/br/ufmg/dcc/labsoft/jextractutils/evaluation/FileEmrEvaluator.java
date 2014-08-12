@@ -1,4 +1,4 @@
-package br.ufmg.dcc.labsoft.jextract.evaluation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,13 +14,12 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 import br.ufmg.dcc.labsoft.jextract.codeanalysis.AstParser;
-import br.ufmg.dcc.labsoft.jextract.generation.ExecutionReport;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.StatementsSliceCountVisitor;
 
-public class JDeodorantEmrEvaluator {
+public class FileEmrEvaluator {
 
 	private static final int COL_FILEPATH = 0;
 	private static final int COL_METHOD = 1;
@@ -33,7 +32,7 @@ public class JDeodorantEmrEvaluator {
 	private final ExecutionReport rep;
 	private ProjectRelevantSet goldset;
 	
-    public JDeodorantEmrEvaluator(Settings settings, IProject project, ProjectRelevantSet goldset, Database db) {
+    public FileEmrEvaluator(Settings settings, IProject project, ProjectRelevantSet goldset, Database db) {
 	    this.settings = settings;
 	    this.project = project;
 	    this.goldset = goldset;

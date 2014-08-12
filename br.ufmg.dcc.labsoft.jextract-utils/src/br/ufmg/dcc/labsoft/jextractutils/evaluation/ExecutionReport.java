@@ -1,9 +1,8 @@
-package br.ufmg.dcc.labsoft.jextract.generation;
+package br.ufmg.dcc.labsoft.jextractutils.evaluation;
 
 import org.eclipse.core.resources.IProject;
 
-import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
-import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
+import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 
 public class ExecutionReport {

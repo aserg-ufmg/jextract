@@ -3,13 +3,10 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
-import br.ufmg.dcc.labsoft.jextract.evaluation.Database;
-import br.ufmg.dcc.labsoft.jextract.evaluation.ProjectRelevantSet;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractionSlice.Fragment;
@@ -18,9 +15,8 @@ import br.ufmg.dcc.labsoft.jextract.ranking.Utils;
 
 public class EmrRecommender {
 
-	private ProjectRelevantSet goldset = null;
-	private final Settings settings;
-	private ExecutionReport rep;
+	protected final Settings settings;
+//	private ExecutionReport rep;
 	//private int[] foundAt;
 	//private int[] totalAt;
 	
@@ -28,12 +24,7 @@ public class EmrRecommender {
 	    this.settings = settings;
     }
 
-	public void setGoldset(IProject project, ProjectRelevantSet goldset, Database db) {
-		this.goldset = goldset;
-		this.rep = new ExecutionReport(this.settings, project, goldset, db);
-	}
-
-	public List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
+	public final List<ExtractMethodRecomendation> rankAndFilterForMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> recomendations) {
 		LinkedList<ExtractMethodRecomendation> result = new LinkedList<ExtractMethodRecomendation>();
 		this.analyseMethod(src, methodDeclaration, recomendations);
 		Utils.sort(recomendations, false);
@@ -58,23 +49,27 @@ public class EmrRecommender {
 			}
 		}
 		
-		if (this.goldset != null) {
-			//String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
-			//System.out.print(id + ": ");
-			boolean found = false;
-			int i = 0;
-			for (ExtractMethodRecomendation rec : result) {
-				if (this.rep.reportEmrAtRank(rec, i)) {
-					found = true;
-				}
-				i++;
-			}
-			if (!found) {
-				//System.out.println("not found");
-			}
-		}
+		this.reportResults(src, methodDeclaration, result);
 		
 		return result;
+	}
+
+	protected void reportResults(ICompilationUnit src, MethodDeclaration methodDeclaration, LinkedList<ExtractMethodRecomendation> result) {
+//		if (this.goldset != null) {
+//			//String id = methodDeclaration.resolveBinding().getDeclaringClass().getQualifiedName() + " " + methodDeclaration.getName();
+//			//System.out.print(id + ": ");
+//			boolean found = false;
+//			int i = 0;
+//			for (ExtractMethodRecomendation rec : result) {
+//				if (this.rep.reportEmrAtRank(rec, i)) {
+//					found = true;
+//				}
+//				i++;
+//			}
+//			if (!found) {
+//				//System.out.println("not found");
+//			}
+//		}
 	}
 
 	private void analyseMethod(ICompilationUnit src, MethodDeclaration methodDeclaration, List<ExtractMethodRecomendation> alternatives) {
@@ -100,8 +95,8 @@ public class EmrRecommender {
 		}
 	}
 
-	public ExecutionReport getReport() {
-		return this.rep;
-	}
+//	public ExecutionReport getReport() {
+//		return this.rep;
+//	}
 
 }

@@ -17,5 +17,10 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.core.manipulation
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: lib/mysql-connector-java-5.1.31-bin.jar,
- .
+Export-Package: br.ufmg.dcc.labsoft.jextract,
+ br.ufmg.dcc.labsoft.jextract.codeanalysis,
+ br.ufmg.dcc.labsoft.jextract.generation,
+ br.ufmg.dcc.labsoft.jextract.model,
+ br.ufmg.dcc.labsoft.jextract.model.impl,
+ br.ufmg.dcc.labsoft.jextract.ranking,
+ br.ufmg.dcc.labsoft.jextract.ui

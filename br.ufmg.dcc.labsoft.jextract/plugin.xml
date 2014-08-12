@@ -17,50 +17,8 @@
          <action
                class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
                enablesFor="1"
-               id="br.ufmg.dcc.labsoft.jextract.showGoldset"
-               label="Show Oracle recomendations"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="1"
                id="br.ufmg.dcc.labsoft.jextract.findEmr"
-               label="Find extract method opportunities"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="+"
-               id="br.ufmg.dcc.labsoft.jextract.evaluate"
-               label="Evaluate using oracle"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="+"
-               id="br.ufmg.dcc.labsoft.jextract.evaluateJdeodorant"
-               label="Evaluate JDeodorant results"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="+"
-               id="br.ufmg.dcc.labsoft.jextract.rewriteVisibility"
-               label="Change Visibility to Public"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="+"
-               id="br.ufmg.dcc.labsoft.jextract.inlineMethods"
-               label="Introduce inline methods"
-               menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
-         </action>
-         <action
-               class="br.ufmg.dcc.labsoft.jextract.ui.ProjectMenuAction"
-               enablesFor="+"
-               id="br.ufmg.dcc.labsoft.jextract.extractGoldSet"
-               label="Extract gold set"
+               label="Find Extract Method Opportunities"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
          </action>
       </objectContribution>
@@ -82,7 +40,7 @@
 	      <action
 	         class="br.ufmg.dcc.labsoft.jextract.ui.MethodMenuAction"
 	         id="br.ufmg.dcc.labsoft.jextract.methodmenu.findEmr" 
-	         label="Find extract method opportunities"
+	         label="Find Extract Method Opportunities"
 	         menubarPath="br.ufmg.dcc.labsoft.jextract.methodMenu/group1"> 
 	      </action> 
 	   </objectContribution> 
