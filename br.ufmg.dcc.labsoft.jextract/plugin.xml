@@ -56,7 +56,7 @@
       <view
             category="br.ufmg.dcc.labsoft.jextract"
             class="br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView"
-            icon="icons/sample.gif"
+            icon="icons/jextract.gif"
             id="br.ufmg.dcc.labsoft.jextract.ui.ExtractMethodRecomendationsView"
             name="Extract Method Recomendations">
       </view>
