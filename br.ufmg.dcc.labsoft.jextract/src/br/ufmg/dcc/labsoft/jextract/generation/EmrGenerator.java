@@ -3,14 +3,9 @@ package br.ufmg.dcc.labsoft.jextract.generation;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceVisitor;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -20,6 +15,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 
+import br.ufmg.dcc.labsoft.jextract.codeanalysis.Utils;
 import br.ufmg.dcc.labsoft.jextract.model.BlockModel;
 import br.ufmg.dcc.labsoft.jextract.model.MethodModel;
 import br.ufmg.dcc.labsoft.jextract.model.Placement;
@@ -56,24 +52,21 @@ public class EmrGenerator {
 	public EmrRecommender getRecommender() {
 		return this.recommender;
 	}
-	
+
 	public final void generateRecomendations(IProject project) throws Exception {
-		project.accept(new IResourceVisitor() {
-			@Override
-			public boolean visit(IResource resource) throws CoreException {
-				if (resource instanceof IFile && resource.getName().endsWith(".java")) {
-					ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
-					try {
-						unit.getSource();
-					} catch (Exception e) {
-						return true;
-						// ICompilationUnit ignored when its source is not available
-					}
-					analyseMethods(unit, null);
-				}
-				return true;
-			}
-		});
+		for (ICompilationUnit icu : Utils.findJavaResources(project)) {
+			generateRecomendations(icu);
+		}
+	}
+
+	public final void generateRecomendations(ICompilationUnit unit) throws Exception {
+		try {
+			unit.getSource();
+		} catch (Exception e) {
+			return;
+			// ICompilationUnit ignored when its source is not available
+		}
+		analyseMethods(unit, null);
 	}
 
 	public final void generateRecomendations(IMethod method) throws Exception {

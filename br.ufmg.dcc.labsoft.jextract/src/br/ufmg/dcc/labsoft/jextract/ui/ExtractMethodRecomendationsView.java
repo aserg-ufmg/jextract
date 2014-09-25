@@ -99,12 +99,11 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		addColumnClass();
 		addColumnMethodName();
 		addColumnRank();
+		addColumnScore().getColumn();
 		addColumnOriginalSize().getColumn();
 		addColumnExtractedSize();
-		
-		addColumnScore().getColumn();
-		addColumnExplanation();
-		addColumnDiffSize();
+		//addColumnExplanation();
+		//addColumnDiffSize();
 
 		makeActions();
 		hookContextMenu();

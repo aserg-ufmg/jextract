@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.window.Window;
-import org.eclipse.swt.widgets.Display;
 
+import br.ufmg.dcc.labsoft.jextract.codeanalysis.Utils;
 import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
@@ -32,26 +32,20 @@ public class ProjectMenuAction extends ObjectMenuAction<IProject> {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			final Settings settings = dialog.getSettings();
-			AbstractJob job = new AbstractJob("Generating Recommendations") {
-				@Override
-				protected void doWorkIteration(int i, IProgressMonitor monitor) throws Exception {
-					final List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-					final EmrGenerator generator = new EmrGenerator(recomendations, settings);
-					generator.generateRecomendations(project);
-					
-					Display.getDefault().asyncExec(new Runnable() {
-						@Override
-                        public void run() {
-							try {
-								showResultView(recomendations, project, settings);
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-					});
+			final List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+			final EmrGenerator generator = new EmrGenerator(recomendations, settings);
+			
+			JobRunner.run("Finding Recommendations", new ItemProcessingJob<ICompilationUnit>(){
+				public List<ICompilationUnit> getItems(){
+					return Utils.findJavaResources(project);
 				}
-			};
-			job.schedule();
+				public void processItem(ICompilationUnit icu) throws Exception {
+					generator.generateRecomendations(icu);
+				}
+				public void updateUI() throws Exception {
+					showResultView(recomendations, project, settings);
+				}
+			});
 		}
 	}
 

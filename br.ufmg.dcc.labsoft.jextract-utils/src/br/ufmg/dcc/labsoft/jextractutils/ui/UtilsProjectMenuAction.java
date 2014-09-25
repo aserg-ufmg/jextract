@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
@@ -13,16 +12,17 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PartInitException;
 
+import br.ufmg.dcc.labsoft.jextract.codeanalysis.Utils;
 import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
-import br.ufmg.dcc.labsoft.jextract.ui.AbstractJob;
 import br.ufmg.dcc.labsoft.jextract.ui.EmrSettingsDialog;
+import br.ufmg.dcc.labsoft.jextract.ui.ItemProcessingJob;
+import br.ufmg.dcc.labsoft.jextract.ui.JobRunner;
 import br.ufmg.dcc.labsoft.jextract.ui.ObjectMenuAction;
 import br.ufmg.dcc.labsoft.jextractutils.evaluation.AggregatedExecutionReport;
 import br.ufmg.dcc.labsoft.jextractutils.evaluation.Database;
@@ -195,26 +195,23 @@ public class UtilsProjectMenuAction extends ObjectMenuAction<IProject> {
 		EmrSettingsDialog dialog = new EmrSettingsDialog(this.getShell());
 		if (dialog.open() == Window.OK) {
 			final Settings settings = dialog.getSettings();
-			AbstractJob job = new AbstractJob("Generating Recommendations") {
+			final List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+			final EmrGenerator generator = new EmrGenerator(recomendations, settings);
+			
+			JobRunner.run("Generating Recommendations", new ItemProcessingJob<ICompilationUnit>() {
 				@Override
-				protected void doWorkIteration(int i, IProgressMonitor monitor) throws Exception {
-					final List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
-					final EmrGenerator generator = new EmrGenerator(recomendations, settings);
-					generator.generateRecomendations(project);
-					
-					Display.getDefault().asyncExec(new Runnable() {
-						@Override
-                        public void run() {
-							try {
-								showResultView(recomendations, project, settings);
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-					});
+				public List<ICompilationUnit> getItems() {
+					return Utils.findJavaResources(project);
 				}
-			};
-			job.schedule();
+				@Override
+				public void processItem(ICompilationUnit item) throws Exception {
+					generator.generateRecomendations(item);
+				}
+				@Override
+				public void updateUI() throws Exception {
+					showResultView(recomendations, project, settings);
+				}
+			});
 		}
 	}
 
