@@ -39,8 +39,8 @@ public class EmrSettingsDialog extends Dialog {
 		this.txtMinMethodSize = this.createTextField(container, "Minimum method statements:", this.settings.getMinMethodSize().toString());
 		this.txtMinExtractedSize = this.createTextField(container, "Minimum extracted statements:", this.settings.getMinExtractedSize().toString());
 		this.txtMaxPerMethod = this.createTextField(container, "Maximum recommendations per method:", this.settings.getMaxPerMethod().toString());
-		this.txtMaxFragments = this.createTextField(container, "Maximum extraction fragments:", this.settings.getMaxFragments().toString());
-		this.txtPenalty = this.createTextField(container, "Statement reordering penalty:", this.settings.getPenalty().toString());
+//		this.txtMaxFragments = this.createTextField(container, "Maximum extraction fragments:", this.settings.getMaxFragments().toString());
+//		this.txtPenalty = this.createTextField(container, "Statement reordering penalty:", this.settings.getPenalty().toString());
 		this.txtMinScore = this.createTextField(container, "Minimum score value:", this.settings.getMinScore().toString());
 		
 		return container;
@@ -75,8 +75,8 @@ public class EmrSettingsDialog extends Dialog {
 			this.settings.setMinMethodSize(Integer.valueOf(txtMinMethodSize.getText()));
 			this.settings.setMinExtractedSize(Integer.valueOf(txtMinExtractedSize.getText()));
 			this.settings.setMaxPerMethod(Integer.valueOf(txtMaxPerMethod.getText()));
-			this.settings.setMaxFragments(Integer.valueOf(txtMaxFragments.getText()));
-			this.settings.setPenalty(Double.valueOf(txtPenalty.getText()));
+//			this.settings.setMaxFragments(Integer.valueOf(txtMaxFragments.getText()));
+//			this.settings.setPenalty(Double.valueOf(txtPenalty.getText()));
 			this.settings.setMinScore(Double.valueOf(txtMinScore.getText()));
 		} catch (NumberFormatException e) {}
 //		try {
