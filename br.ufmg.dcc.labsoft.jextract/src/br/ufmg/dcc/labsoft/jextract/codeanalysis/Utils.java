@@ -9,7 +9,10 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 
 public class Utils {
 
@@ -37,6 +40,27 @@ public class Utils {
 			throw new RuntimeException(e);
 		}
 		return cu;
+	}
+
+	public static List<ICompilationUnit> findJavaResources(IPackageFragment packg) {
+		ArrayList<ICompilationUnit> list = new ArrayList<ICompilationUnit>();
+		findJavaResourcesRecursive(packg, list);
+		return list;
+	}
+
+	private static void findJavaResourcesRecursive(IPackageFragment packg, List<ICompilationUnit> list) {
+		try {
+			for (ICompilationUnit icu : packg.getCompilationUnits()) {
+				list.add(icu);
+			}
+			for (IJavaElement e : packg.getChildren()) {
+				if (e instanceof IPackageFragment) {
+					findJavaResourcesRecursive((IPackageFragment) e, list);
+				}
+			}
+		} catch (JavaModelException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

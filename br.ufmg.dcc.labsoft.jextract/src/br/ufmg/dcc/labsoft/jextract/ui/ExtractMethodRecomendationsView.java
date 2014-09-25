@@ -7,6 +7,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractMethodRefactoring;
@@ -65,6 +66,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	Listener sortListener;
 	private boolean groupByMethod = false;
 	private Settings settings;
+	private IProject project;
 
 	
 	public ExtractMethodRecomendationsView() {
@@ -83,6 +85,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 	public void setRecomendations(List<ExtractMethodRecomendation> recomendations, IProject project, Settings settings) {
 		this.recomendations = recomendations;
 		this.settings = settings;
+		this.project = project;
 		this.viewer.setInput(recomendations);
 	}
 
@@ -363,8 +366,7 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 			ITextEditor sourceEditor = (ITextEditor) JavaUI.openInEditor(sourceJavaElement);
 
 			// limpa as anotações
-			sourceFile.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslice", true, IResource.DEPTH_ONE);
-			sourceFile.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslicedup", true, IResource.DEPTH_ONE);
+			this.clearMarkers();
 
 			Fragment[] fragments = refactoring.getExtractionSlice().getFragments();
 			int firstChar = Integer.MAX_VALUE;
@@ -397,4 +399,18 @@ public class ExtractMethodRecomendationsView extends ViewPart {
 		viewer.getControl().setFocus();
 	}
 
+	private void clearMarkers() {
+		try {
+			this.project.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslice", true, IResource.DEPTH_INFINITE);
+			this.project.deleteMarkers("br.ufmg.dcc.labsoft.jextract.extractionslicedup", true, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@Override
+	public void dispose() {
+		super.dispose();
+		this.clearMarkers();
+	}
 }

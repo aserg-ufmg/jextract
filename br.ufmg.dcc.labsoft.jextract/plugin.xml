@@ -4,7 +4,7 @@
    <extension
          point="org.eclipse.ui.popupMenus">
       <objectContribution
-            id="br.ufmg.dcc.labsoft.jextract.contribution1"
+            id="br.ufmg.dcc.labsoft.jextract.projectContribution"
             objectClass="org.eclipse.core.resources.IProject">
          <menu
                id="br.ufmg.dcc.labsoft.jextract.projectMenu"
@@ -20,6 +20,75 @@
                id="br.ufmg.dcc.labsoft.jextract.findEmr"
                label="Find Extract Method Opportunities"
                menubarPath="br.ufmg.dcc.labsoft.jextract.projectMenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="br.ufmg.dcc.labsoft.jextract.javaProjectContribution"
+            objectClass="org.eclipse.jdt.core.IJavaProject">
+         <menu
+               id="br.ufmg.dcc.labsoft.jextract.javaProjectMenu"
+               label="JExtract"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.JavaProjectMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.findEmr"
+               label="Find Extract Method Opportunities"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.javaProjectMenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="br.ufmg.dcc.labsoft.jextract.packageContribution"
+            objectClass="org.eclipse.jdt.core.IPackageFragment">
+         <menu
+               id="br.ufmg.dcc.labsoft.jextract.packageMenu"
+               label="JExtract"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.PackageMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.findEmr"
+               label="Find Extract Method Opportunities"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.packageMenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="br.ufmg.dcc.labsoft.jextract.fileContribution"
+            objectClass="org.eclipse.jdt.core.ICompilationUnit">
+         <menu
+               id="br.ufmg.dcc.labsoft.jextract.fileMenu"
+               label="JExtract"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="br.ufmg.dcc.labsoft.jextract.ui.JavaFileMenuAction"
+               enablesFor="1"
+               id="br.ufmg.dcc.labsoft.jextract.findEmr"
+               label="Find Extract Method Opportunities"
+               menubarPath="br.ufmg.dcc.labsoft.jextract.fileMenu/group1">
          </action>
       </objectContribution>
    </extension>
