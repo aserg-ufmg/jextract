@@ -21,6 +21,10 @@ public class EmrRankFileExporter {
 			try {
 				for (ExtractMethodRecomendation rec : this.data) {
 					try {
+						if (rec.getProject() != null) {
+							writer.print(rec.getProject());
+							writer.print('\t');
+						}
 						writer.println(String.format("%s\t%s\t%s\t%d\t%d\t%s", rec.className, rec.method, rec.slice.toString(), rec.getOriginalSize(), rec.getExtractedSize(), Double.toString(rec.getScore())));
 					} catch (Exception e) {
 						throw new RuntimeException(e);

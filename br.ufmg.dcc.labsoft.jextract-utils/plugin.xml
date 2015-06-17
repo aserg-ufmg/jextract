@@ -56,6 +56,13 @@
                label="Create Oracle File from Markers"
                menubarPath="br.ufmg.dcc.labsoft.jextractutils.projectMenu/group1">
          </action>
+         <action
+               class="br.ufmg.dcc.labsoft.jextractutils.ui.UtilsProjectMenuAction"
+               enablesFor="+"
+               id="br.ufmg.dcc.labsoft.jextractutils.exportData"
+               label="Generate and Export Recommendations"
+               menubarPath="br.ufmg.dcc.labsoft.jextractutils.projectMenu/group1">
+         </action>
       </objectContribution>
    </extension>
    

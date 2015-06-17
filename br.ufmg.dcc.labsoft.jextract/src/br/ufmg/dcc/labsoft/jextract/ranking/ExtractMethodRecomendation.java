@@ -9,6 +9,7 @@ public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 
 	private int rank = 0;
 	public final int id;
+	public String project;
 	public final String className;
 	public final String method;
 	private int duplicatedSize;
@@ -209,4 +210,12 @@ public class ExtractMethodRecomendation implements OffsetBasedEmrDescriptor {
 		this.score = score;
 	}
 
+	public String getProject() {
+		return project;
+	}
+
+	public void setProject(String project) {
+		this.project = project;
+	}
+	
 }

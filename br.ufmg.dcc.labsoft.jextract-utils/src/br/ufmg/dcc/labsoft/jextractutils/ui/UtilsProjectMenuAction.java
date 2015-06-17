@@ -19,6 +19,7 @@ import br.ufmg.dcc.labsoft.jextract.generation.EmrGenerator;
 import br.ufmg.dcc.labsoft.jextract.generation.Settings;
 import br.ufmg.dcc.labsoft.jextract.ranking.Coefficient;
 import br.ufmg.dcc.labsoft.jextract.ranking.EmrFileReader;
+import br.ufmg.dcc.labsoft.jextract.ranking.EmrRankFileExporter;
 import br.ufmg.dcc.labsoft.jextract.ranking.ExtractMethodRecomendation;
 import br.ufmg.dcc.labsoft.jextract.ui.EmrSettingsDialog;
 import br.ufmg.dcc.labsoft.jextract.ui.ItemProcessingJob;
@@ -85,6 +86,13 @@ public class UtilsProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 		if (actionId.equals("br.ufmg.dcc.labsoft.jextractutils.evaluateFromFile")) {
 			evaluateFromFile(projects);
+			return;
+		}
+		if (actionId.equals("br.ufmg.dcc.labsoft.jextractutils.exportData")) {
+			//List<Settings> settingsList = this.getFullSettings();
+			//List<Settings> settingsList = this.getSettingsCoefficients();
+			//List<Settings> settingsList = this.getSettingsWeights();
+			exportData(projects);
 			return;
 		}
 		
@@ -243,6 +251,52 @@ public class UtilsProjectMenuAction extends ObjectMenuAction<IProject> {
 		}
 		
 		MessageDialog.openInformation(this.getShell(), "JExtract", "Evaluation complete.");
+	}
+
+	private void exportData(List<IProject> projects) throws Exception {
+		//Database db = new FakeDatabase();
+		//Database db = Database.getInstance();
+		List<Settings> settingsList = new ArrayList<Settings>();
+		Settings s = new Settings("default");
+		s.setMaxPerMethod(1);
+		settingsList.add(s);
+		
+		try {
+			for (Settings settings : settingsList) {
+				List<ExtractMethodRecomendation> allRecomendations = new ArrayList<ExtractMethodRecomendation>();
+				//Settings settings = dialog.getSettings();
+				//AggregatedExecutionReport arep = new AggregatedExecutionReport(settings);
+				for (IProject project : projects) {
+					//ProjectRelevantSet goldset = new ProjectRelevantSet(project.getLocation().toString() + "/goldset.txt");
+					List<ExtractMethodRecomendation> recomendations = new ArrayList<ExtractMethodRecomendation>();
+					UtilsEmrGenerator generator = new UtilsEmrGenerator(recomendations, settings);
+					//generator.setOracle(project, goldset, db);
+					//ExecutionReport rep = generator.generateRecomendations(project);
+					generator.generateRecomendations(project);
+					//arep.merge(rep);
+					allRecomendations.addAll(recomendations);
+					String projectName = project.getName();
+					for (ExtractMethodRecomendation rec : recomendations) {
+						rec.setProject(projectName);
+					}
+				}
+				br.ufmg.dcc.labsoft.jextract.ranking.Utils.sort(allRecomendations, false);
+				
+				String outputFile = projects.get(0).getLocation().toString() + "/../out.txt";
+				EmrRankFileExporter exporter = new EmrRankFileExporter(allRecomendations, outputFile);
+				exporter.export();
+				
+				//arep.printReport();
+				//arep.printSummary();
+//				if (projects.size() == 1 && settingsList.size() == 1) {
+//					showResultView(allRecomendations, projects.get(0), settings);
+//				}
+			}
+		} finally {
+			//db.close();
+		}
+		
+		MessageDialog.openInformation(this.getShell(), "JExtract", "Export data complete.");
 	}
 
 	private void evaluateFromFile(List<IProject> projects) throws Exception {
