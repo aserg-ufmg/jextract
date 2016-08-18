@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body {
+  padding: 20px 40px;
+}
+#releases td {
+  padding-right: 10px;
+}
+</style>
+<title>JExtract</title>
+</head>
+<body>
+
+<!--
+<h3 align="center">Companion website for the following paper submitted to the 22nd International Conference on Program Comprehension (ICPC)</h3>
+-->
+
+<h1 align="center">JExtract: Recommending Automated Extract Method Refactorings</h1>
+
+<h4 align="center">Danilo Silva<sup>1</sup>, Ricardo Terra<sup>2</sup>, Marco Tulio Valente<sup>1</sup><br /> 
+<span><sup>1</sup>Department of Computer Science, UFMG, Brazil</span> <br />
+<span><sup>2</sup>Department of Computer Science, UFLA, Brazil</span> <br />
+<span>danilofs</span><span>@dcc.ufmg.br</span>, <span>terra</span><span>@dcc.ufla.br</span>, <span>mtov</span><span>@dcc.ufmg.br</span></h4>
+
+<p>
+JExtract is an Eclipse plug-in that analyses the source code of a method and recommends extract method refactoring opportunities.
+</p>
+
+<h3>Downloads</h3>
+<table id="releases">
+  <tr>
+    <td>JExtract 1.0.0 (latest)</td>
+    <td><a href="jextract-1.0.0.zip">Binary</a></td>
+    <td><a href="jextract-source-1.0.0.zip">Source Code</a></td>
+  </tr>
+</table>
+
+<h3>Abstract</h3>
+<p>
+Although Extract Method is a key refactoring for improving program comprehension,
+refactoring tools for such purpose are often underused.
+To address this shortcoming, we present JExtract, a recommendation system based on structural similarity 
+that identifies Extract Method refactoring opportunities 
+that are directly automated by IDE-based refactoring tools.
+Our evaluation suggests that JExtract is far more effective (w.r.t. recall and precision) to identify misplaced code in methods than JDeodorant, a state-of-the-art tool.
+</p>
+
+<h3>Evaluation Data</h3>
+<p>
+The source code of the systems used in the evaluation and their corresponding Extract Method instances file (oracle.txt) are available here as Eclipse projects.
+</p>
+<ul>
+<li><a href="MyWebMarket.zip">MyWebMarket</a></li>
+<li><a href="junit3.8.zip">JUnit 3.8 (synthesized)</a></li>
+<li><a href="JHotDraw5.2.zip">JHotDraw 5.2 (synthesized)</a></li>
+</ul>
+
+<p>The oracle.txt files contain one Extract Method description per line, for example:</p>
+<pre>
+classes.CustomerAction	public java.lang.String find() throws java.lang.Exception	e2359:577;e2981:41;
+</pre>
+<p>
+In this example, the qualified class name is <code>classes.CustomerAction</code>, the method signature is <code>public java.lang.String find() throws java.lang.Exception</code> and the extracted statements are those enclosed by the char ranges <code>e2359:577;e2981:41;</code>. Char ranges are specified as <code>e[start]:[length];</code>.
+</p>
+
+</body>
+</html>
